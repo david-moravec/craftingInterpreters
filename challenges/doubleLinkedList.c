@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include<stdio.h>
 #include<assert.h>
+#include<stdbool.h>
 
 typedef int content;
 
@@ -25,9 +26,67 @@ void append_to(node* parent, content val) {
         child->next = parent_next;
         parent_next->prev = child;
     }
-
-
 }
+
+bool append_nodes(node* parent, node* to_append) {
+    //make sure parent does not have next first
+    if (parent->next != NULL) {
+        return false;
+    } else {
+        parent->next = to_append;
+        return true;
+    }
+}
+
+bool delete_node(node* current) {
+    node* parent = current->prev;
+    node* child = current->next;
+
+    parent->next = NULL;
+
+    if (append_nodes(parent, child)) {
+        free(current);
+        return true;
+    } else {
+        return false;
+    } 
+}
+
+/*
+void delete(node* node, content to_delete) {
+    //Deletes all nodes with content == to_delete
+    //Delete forward
+    //
+
+    node* current = node;
+
+    while (current->next != NULL) {
+        next = current->next;
+
+        if (current->content == to_delete) {
+            node* prev = current->prev;
+            prev->next = next;
+            free(current)
+        }
+
+        current = next;
+    }
+
+
+
+    while (current->next != NULL) {
+        next = current->next;
+
+        if (current->content == to_delete) {
+            node* prev = current->prev;
+            prev->next = next;
+            free(current)
+        }
+
+        current = next;
+    }
+}
+*/
 
 int main() {
     node* head = NULL;
@@ -47,6 +106,10 @@ int main() {
     append_to(head, 3);
     assert(head->next->content == 3);
     assert(head->next->next->content == 4);
+
+    if (delete_node(head->next)) {
+        assert(head->next->content == 4);
+    };
 
 
     return 0;
