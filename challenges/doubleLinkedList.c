@@ -6,14 +6,15 @@
 
 typedef int content;
 
-typedef struct node {
+typedef struct _Node {
     content content;
-    struct node* next;
-    struct node* prev;
-} node;
+    struct _Node* next;
+    struct _Node* prev;
+} Node;
 
-void append_to(node* parent, content val) {
-    node* child = (node*) malloc(sizeof(node));
+
+void append_to(Node* parent, content val) {
+    Node* child = (Node*) malloc(sizeof(Node));
     child->content = val;
     child->prev = parent;
 
@@ -21,14 +22,14 @@ void append_to(node* parent, content val) {
         parent->next = child;
     //insert child behind parent append what was previously appended to parent
     } else { 
-        node* parent_next = parent->next;
+        Node* parent_next = parent->next;
         parent->next = child;
         child->next = parent_next;
         parent_next->prev = child;
     }
 }
 
-bool append_nodes(node* parent, node* to_append) {
+bool append_nodes(Node* parent, Node* to_append) {
     //make sure parent does not have next first
     if (parent->next != NULL) {
         return false;
@@ -38,9 +39,9 @@ bool append_nodes(node* parent, node* to_append) {
     }
 }
 
-bool delete_node(node* current) {
-    node* parent = current->prev;
-    node* child = current->next;
+bool delete_node(Node* current) {
+    Node* parent = current->prev;
+    Node* child = current->next;
 
     parent->next = NULL;
 
@@ -52,21 +53,42 @@ bool delete_node(node* current) {
     } 
 }
 
-/*
-void delete(node* node, content to_delete) {
+Node* head_linked_list(Node* current) {
+    if (current->prev == NULL) {
+        return current;
+    }
+
+    return head_linked_list(current->prev);
+}
+
+Node* tail_linked_list(Node* current) {
+    if (current->next == NULL) {
+        return current;
+    }
+
+    return tail_linked_list(current->next);
+}
+
+
+void delete(Node* current, content to_delete) {
     //Deletes all nodes with content == to_delete
     //Delete forward
     //
+    //
 
-    node* current = node;
+    Node* start = current;
 
-    while (current->next != NULL) {
-        next = current->next;
+    Node* head = head_linked_list(current);
+    Node* tail = tail_linked_list(current);
+
+
+    while (current != tail) {
+        Node* next = current->next;
 
         if (current->content == to_delete) {
-            node* prev = current->prev;
+            Node* prev = current->prev;
             prev->next = next;
-            free(current)
+            free(current);
         }
 
         current = next;
@@ -74,23 +96,42 @@ void delete(node* node, content to_delete) {
 
 
 
-    while (current->next != NULL) {
-        next = current->next;
+    while (current != head) {
+        Node* prev = current->prev;
 
         if (current->content == to_delete) {
-            node* prev = current->prev;
-            prev->next = next;
-            free(current)
+            Node* next = current->next;
+            next->prev = prev;
+            free(current);
         }
 
-        current = next;
+        current = prev;
     }
 }
-*/
+
+
+
+
+int len_linked_list(Node* some_node) {
+        //start from head
+        Node* current = head_linked_list(some_node);
+        Node* tail = tail_linked_list(some_node);
+
+        int sum = 1;
+
+        while (current != tail) {
+            sum += 1;
+
+            current = current->next;
+        }
+
+        return sum;
+    }
+
 
 int main() {
-    node* head = NULL;
-    head = (node*) malloc(sizeof(node));
+    Node* head = NULL;
+    head = (Node*) malloc(sizeof(Node));
 
     if (head == NULL) {
         printf("Head still NULL");
@@ -107,10 +148,22 @@ int main() {
     assert(head->next->content == 3);
     assert(head->next->next->content == 4);
 
+    assert(head == head_linked_list(head->next->next));
+    assert(head->next->next == tail_linked_list(head));
+
+    assert(len_linked_list(head) == 3);
+
+        
     if (delete_node(head->next)) {
         assert(head->next->content == 4);
+        assert(len_linked_list(head) == 2);
     };
 
+    for (int i = 0; i<10; i ++) {
+        append_to(head, i);
+    }
+
+    assert(len_linked_list(head) == 12);
 
     return 0;
 }
