@@ -4,16 +4,25 @@
 #include<assert.h>
 #include<stdbool.h>
 
-typedef int content;
+//Should be generic as well
+typedef int Content;
+
+//somethign that will be generic in the future, dont know how to declare generic type
+typedef float T;
 
 typedef struct _Node {
-    content content;
+    Content content;
     struct _Node* next;
     struct _Node* prev;
 } Node;
 
+typedef struct _LinkedList {
+    Node* head;
+    Node* tail;
+} LinkedList;
 
-void append_to(Node* parent, content val) {
+
+void append_to(Node* parent, Content val) {
     Node* child = (Node*) malloc(sizeof(Node));
     child->content = val;
     child->prev = parent;
@@ -69,8 +78,20 @@ Node* tail_linked_list(Node* current) {
     return tail_linked_list(current->next);
 }
 
+typedef T (*FUNC)(Content, T)
 
-void delete(Node* current, content to_delete) {
+
+T foldr(T (*func)(Content, T), T acc, LinkedList list) {
+    Node* next = list.head;
+
+    if (next != list.tail) {
+        func(next->content, acc);
+    }
+}
+
+
+
+void delete(Node* current, Content to_delete) {
     //Deletes all nodes with content == to_delete
     //Delete forward
     //
