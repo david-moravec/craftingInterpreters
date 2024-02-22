@@ -7,7 +7,7 @@ import (
 )
 
 func run(source string) {
-	scanner := Scanner{Source: source}
+	scanner := Scanner{source: source}
 	tokens := scanner.scanTokens()
 
 	for _, token := range tokens {
