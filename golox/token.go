@@ -30,7 +30,7 @@ const (
 	Equal
 	EqualEqual
 	Greater
-	GreaterEquAL
+	GreaterEqual
 	Less
 	LessEqual
 )

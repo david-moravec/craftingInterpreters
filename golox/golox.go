@@ -6,13 +6,19 @@ import (
 	"os"
 )
 
-func run(source string) {
+func run(source string) error {
 	scanner := Scanner{source: source}
-	tokens := scanner.scanTokens()
+	tokens, err := scanner.scanTokens()
+
+	if err != nil {
+		return err
+	}
 
 	for _, token := range tokens {
 		fmt.Println(token)
 	}
+
+	return nil
 }
 
 type GoLox struct {
@@ -21,11 +27,16 @@ type GoLox struct {
 
 func (g *GoLox) runFile(filename string) {
 	bytes, err := os.ReadFile(filename)
+
 	if err != nil {
-		g.error(0, err.Error())
+		g.error(0, err)
 	}
 
-	run(string(bytes))
+	err = run(string(bytes))
+
+	if err != nil {
+		g.error(0, err)
+	}
 
 	if g.hadError {
 		os.Exit(64)
@@ -39,7 +50,7 @@ func (g *GoLox) runPrompt() {
 		fmt.Print("> ")
 		line, err := reader.ReadString('\n')
 		if err != nil {
-			g.error(0, err.Error())
+			g.error(0, err)
 		}
 		if line == "" {
 			break
@@ -54,6 +65,6 @@ func (g *GoLox) report(line int, where string, message string) {
 	g.hadError = true
 }
 
-func (g *GoLox) error(line int, message string) {
-	g.report(line, "", message)
+func (g *GoLox) error(line int, err error) {
+	g.report(line, "", err.Error())
 }

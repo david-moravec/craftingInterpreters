@@ -1,5 +1,7 @@
 package main
 
+import "errors"
+
 type Scanner struct {
 	source       string
 	tokens       []Token
@@ -8,19 +10,99 @@ type Scanner struct {
 	line         int
 }
 
-func (s Scanner) scanTokens() []Token {
+func (s Scanner) scanTokens() ([]Token, error) {
+	var errs []error
+
 	for !s.isAtEnd() {
 		s.lexeme_start = s.current_char
-		s.scanToken()
+
+		tkind, err := s.resolveTokenKind()
+
+		if err != nil {
+			errs = append(errs, err)
+		} else {
+			s.addToken(tkind)
+		}
 	}
 
 	s.tokens = append(s.tokens, Token{EOF, "", "", s.line})
 
-	return s.tokens
+	return s.tokens, nil
 }
 
 func (s *Scanner) isAtEnd() bool {
 	return s.current_char >= len(s.source)
 }
 
-func (s *Scanner) scanToken() {}
+func (s *Scanner) advance() byte {
+	s.current_char += 1
+	return s.source[s.current_char]
+}
+
+func (s *Scanner) match(expected byte) bool {
+	if s.isAtEnd() {
+		return false
+	}
+
+	if s.source[s.current_char] != expected {
+		return false
+	}
+
+	s.current_char += 1
+	return true
+}
+
+func (s *Scanner) addToken(token_kind TokenKind) {
+	s.tokens = append(s.tokens, Token{token_kind, s.source[s.lexeme_start:s.current_char], "", s.line})
+}
+
+func (s *Scanner) resolveTokenKind() (TokenKind, error) {
+	switch s.advance() {
+	case '(':
+		return TokenKind(LeftParenthesis), nil
+	case ')':
+		return TokenKind(RightParenthesis), nil
+	case '{':
+		return TokenKind(LeftBrace), nil
+	case '}':
+		return TokenKind(RightBrace), nil
+	case ',':
+		return TokenKind(Comma), nil
+	case '.':
+		return TokenKind(Dot), nil
+	case '-':
+		return TokenKind(Minus), nil
+	case '+':
+		return TokenKind(Plus), nil
+	case ';':
+		return TokenKind(Semicolon), nil
+	case '*':
+		return TokenKind(Star), nil
+	case '!':
+		if s.match('=') {
+			return TokenKind(BangEqual), nil
+		} else {
+			return TokenKind(Bang), nil
+		}
+	case '=':
+		if s.match('=') {
+			return TokenKind(EqualEqual), nil
+		} else {
+			return TokenKind(Equal), nil
+		}
+	case '<':
+		if s.match('=') {
+			return TokenKind(LessEqual), nil
+		} else {
+			return TokenKind(Less), nil
+		}
+	case '>':
+		if s.match('=') {
+			return TokenKind(GreaterEqual), nil
+		} else {
+			return TokenKind(Greater), nil
+		}
+	default:
+		return TokenKind(EOF), errors.New("Token not Recognized")
+	}
+}
