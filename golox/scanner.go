@@ -18,12 +18,12 @@ func (s Scanner) scanTokens() ([]Token, error) {
 	for !s.isAtEnd() {
 		s.lexeme_start = s.current_char
 
-		tkind, err := s.resolveTokenKind()
+		tkind, literal, err := s.resolveTokenKind()
 
 		if err != nil {
 			errs = append(errs, err)
 		} else {
-			s.addToken(tkind)
+			s.addToken(tkind, literal)
 		}
 	}
 
@@ -63,61 +63,82 @@ func (s *Scanner) match(expected byte) bool {
 	return true
 }
 
-func (s *Scanner) addToken(token_kind TokenKind) {
+func (s *Scanner) addToken(token_kind TokenKind, literal string) {
 	switch token_kind {
 	case TokenKind(Meaningless):
 		return
 	default:
-		s.tokens = append(s.tokens, Token{token_kind, s.source[s.lexeme_start:s.current_char], "", s.line})
+		s.tokens = append(s.tokens, Token{token_kind, s.source[s.lexeme_start:s.current_char], literal, s.line})
 	}
 
 }
 
-func (s *Scanner) resolveTokenKind() (TokenKind, error) {
+func (s *Scanner) createString() (TokenKind, string, error) {
+	for s.peek() != '"' && !s.isAtEnd() {
+		if s.peek() == '\n' {
+			s.line++
+		}
+
+		s.advance()
+	}
+
+	if s.isAtEnd() {
+		return TokenKind(EOF), "", errors.New("Unterminated string")
+	}
+
+	//closing "
+	s.advance()
+
+	literal := s.source[s.lexeme_start+1 : s.current_char-1]
+
+	return TokenKind(String), literal, nil
+}
+
+func (s *Scanner) resolveTokenKind() (TokenKind, string, error) {
 	switch s.advance() {
 	case '(':
-		return TokenKind(LeftParenthesis), nil
+		return TokenKind(LeftParenthesis), "", nil
 	case ')':
-		return TokenKind(RightParenthesis), nil
+		return TokenKind(RightParenthesis), "", nil
 	case '{':
-		return TokenKind(LeftBrace), nil
+		return TokenKind(LeftBrace), "", nil
 	case '}':
-		return TokenKind(RightBrace), nil
+		return TokenKind(RightBrace), "", nil
 	case ',':
-		return TokenKind(Comma), nil
+		return TokenKind(Comma), "", nil
 	case '.':
-		return TokenKind(Dot), nil
+		return TokenKind(Dot), "", nil
 	case '-':
-		return TokenKind(Minus), nil
+		return TokenKind(Minus), "", nil
 	case '+':
-		return TokenKind(Plus), nil
+		return TokenKind(Plus), "", nil
 	case ';':
-		return TokenKind(Semicolon), nil
+		return TokenKind(Semicolon), "", nil
 	case '*':
-		return TokenKind(Star), nil
+		return TokenKind(Star), "", nil
 	case '!':
 		if s.match('=') {
-			return TokenKind(BangEqual), nil
+			return TokenKind(BangEqual), "", nil
 		} else {
-			return TokenKind(Bang), nil
+			return TokenKind(Bang), "", nil
 		}
 	case '=':
 		if s.match('=') {
-			return TokenKind(EqualEqual), nil
+			return TokenKind(EqualEqual), "", nil
 		} else {
-			return TokenKind(Equal), nil
+			return TokenKind(Equal), "", nil
 		}
 	case '<':
 		if s.match('=') {
-			return TokenKind(LessEqual), nil
+			return TokenKind(LessEqual), "", nil
 		} else {
-			return TokenKind(Less), nil
+			return TokenKind(Less), "", nil
 		}
 	case '>':
 		if s.match('=') {
-			return TokenKind(GreaterEqual), nil
+			return TokenKind(GreaterEqual), "", nil
 		} else {
-			return TokenKind(Greater), nil
+			return TokenKind(Greater), "", nil
 		}
 	case '\\':
 		if s.match('\\') {
@@ -125,16 +146,18 @@ func (s *Scanner) resolveTokenKind() (TokenKind, error) {
 				s.advance()
 			}
 			s.line += 1
-			return TokenKind(Meaningless), nil
+			return TokenKind(Meaningless), "", nil
 		} else {
-			return TokenKind(Slash), nil
+			return TokenKind(Slash), "", nil
 		}
 	case ' ', '\r', '\t':
-		return TokenKind(Meaningless), nil
+		return TokenKind(Meaningless), "", nil
 	case '\n':
 		s.line += 1
-		return TokenKind(Meaningless), nil
+		return TokenKind(Meaningless), "", nil
+	case '"':
+		return s.createString()
 	default:
-		return TokenKind(EOF), errors.New("Token not Recognized")
+		return TokenKind(EOF), "", errors.New("Token not Recognized")
 	}
 }
