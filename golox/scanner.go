@@ -1,6 +1,8 @@
 package main
 
-import "errors"
+import (
+	"errors"
+)
 
 type Scanner struct {
 	source       string
@@ -35,8 +37,17 @@ func (s *Scanner) isAtEnd() bool {
 }
 
 func (s *Scanner) advance() byte {
+	current := s.source[s.current_char]
 	s.current_char += 1
-	return s.source[s.current_char]
+	return current
+}
+
+func (s *Scanner) peek() byte {
+	if s.isAtEnd() {
+		return '0'
+	} else {
+		return s.source[s.current_char]
+	}
 }
 
 func (s *Scanner) match(expected byte) bool {
@@ -53,7 +64,13 @@ func (s *Scanner) match(expected byte) bool {
 }
 
 func (s *Scanner) addToken(token_kind TokenKind) {
-	s.tokens = append(s.tokens, Token{token_kind, s.source[s.lexeme_start:s.current_char], "", s.line})
+	switch token_kind {
+	case TokenKind(Meaningless):
+		return
+	default:
+		s.tokens = append(s.tokens, Token{token_kind, s.source[s.lexeme_start:s.current_char], "", s.line})
+	}
+
 }
 
 func (s *Scanner) resolveTokenKind() (TokenKind, error) {
@@ -102,6 +119,21 @@ func (s *Scanner) resolveTokenKind() (TokenKind, error) {
 		} else {
 			return TokenKind(Greater), nil
 		}
+	case '\\':
+		if s.match('\\') {
+			for s.peek() != '\n' && s.isAtEnd() {
+				s.advance()
+			}
+			s.line += 1
+			return TokenKind(Meaningless), nil
+		} else {
+			return TokenKind(Slash), nil
+		}
+	case ' ', '\r', '\t':
+		return TokenKind(Meaningless), nil
+	case '\n':
+		s.line += 1
+		return TokenKind(Meaningless), nil
 	default:
 		return TokenKind(EOF), errors.New("Token not Recognized")
 	}

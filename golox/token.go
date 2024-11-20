@@ -1,15 +1,9 @@
 package main
 
-import (
-	"fmt"
-)
-
 type TokenKind int
 
-type SingleCharacter TokenKind
-
 const (
-	LeftParenthesis SingleCharacter = iota
+	LeftParenthesis TokenKind = iota
 	RightParenthesis
 	LeftBrace
 	RightBrace
@@ -20,47 +14,21 @@ const (
 	Semicolon
 	Slash
 	Star
-)
-
-type DoubleCharacter TokenKind
-
-const (
-	Bang DoubleCharacter = iota
-	BangEqual
+	Meaningless
+	Bang
 	Equal
-	EqualEqual
 	Greater
-	GreaterEqual
 	Less
+	//double char
+	BangEqual
+	EqualEqual
+	GreaterEqual
 	LessEqual
-)
-
-type Literal TokenKind
-
-const (
-	Identifier Literal = iota
+	Identifier
 	String
 	Number
-)
-
-var literals = [...]string{
-	"Identifier",
-	"String",
-	"Number",
-}
-
-func (l Literal) String() string {
-	if Identifier <= l && l <= Number {
-		return literals[l]
-	}
-
-	return "Not a valid literal"
-}
-
-type Keyword TokenKind
-
-const (
-	And Keyword = iota
+	// keyword
+	And
 	Class
 	Else
 	False
@@ -76,9 +44,33 @@ const (
 	True
 	Var
 	While
+	EOF
 )
 
-var keywords = [...]string{
+var kind_2_string = [...]string{
+	"(",
+	")",
+	"{",
+	"}",
+	",",
+	".",
+	"-",
+	"+",
+	";",
+	"\\",
+	"*",
+	"0",
+	"!",
+	"=",
+	">",
+	"<",
+	"!=",
+	"==",
+	">=",
+	"<=",
+	"Identifier",
+	"String",
+	"Number",
 	"And",
 	"Class",
 	"Else",
@@ -95,19 +87,16 @@ var keywords = [...]string{
 	"True",
 	"Var",
 	"While",
+	"EOF",
 }
 
-func (k Keyword) String() string {
-	if And <= k && k <= While {
-		return keywords[k]
+func (t TokenKind) String() string {
+	if LeftParenthesis <= t && t <= EOF {
+		return kind_2_string[t]
 	}
 
-	return "Not a valid keyword"
+	return "Not a valid literal"
 }
-
-const (
-	EOF TokenKind = iota
-)
 
 type Token struct {
 	kind    TokenKind
@@ -117,5 +106,5 @@ type Token struct {
 }
 
 func (t Token) String() string {
-	return fmt.Sprintf("%i")
+	return t.kind.String()
 }
