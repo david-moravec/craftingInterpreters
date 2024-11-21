@@ -102,6 +102,7 @@ type Token struct {
 	kind    TokenKind
 	lexeme  string
 	literal string
+	value   float64
 	line    int
 }
 
