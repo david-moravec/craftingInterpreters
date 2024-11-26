@@ -90,6 +90,26 @@ var kind_2_string = [...]string{
 	"EOF",
 }
 
+var Keywords = map[string]TokenKind{
+
+	"And":    And,
+	"Class":  Class,
+	"Else":   Else,
+	"False":  False,
+	"Fun":    Fun,
+	"For":    For,
+	"If":     If,
+	"Nil":    Nil,
+	"Or":     Or,
+	"Print":  Print,
+	"Return": Return,
+	"Super":  Super,
+	"This":   This,
+	"True":   True,
+	"Var":    Var,
+	"While":  While,
+}
+
 func (t TokenKind) String() string {
 	if LeftParenthesis <= t && t <= EOF {
 		return kind_2_string[t]

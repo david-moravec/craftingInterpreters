@@ -1,8 +1,34 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 )
+
+func test_for_token_kind(t *testing.T, source string, kinds []TokenKind) {
+	scanner := Scanner{source: source}
+
+	tokens, err := scanner.scanTokens()
+
+	if err != nil {
+		t.Error("Gor error", err)
+	}
+
+	// get rid of the EOF token
+	tokens = tokens[:len(tokens)-1]
+
+	if len(kinds) != len(tokens) {
+		t.Errorf("Inconsistent number of tokens parsed and token kinds (%d)"+
+			"available for check (%d)", len(kinds), len(tokens))
+		return
+	}
+
+	for i, token := range tokens {
+		if token.kind != kinds[i] {
+			t.Errorf("Incorect %d token expected %s, got %s", i, kinds[i], token.kind)
+		}
+	}
+}
 
 func test_for_literal(t *testing.T, source string, literal string) {
 	scanner := Scanner{source: source}
@@ -40,4 +66,16 @@ func Test_createString(t *testing.T) {
 
 func Test_createNumber(t *testing.T) {
 	test_for_number(t, "88.8", 88.8)
+}
+
+func Test_createIdent(t *testing.T) {
+	test_for_token_kind(t,
+		"ahoj And and While lol",
+		[]TokenKind{
+			TokenKind(Identifier),
+			TokenKind(And),
+			TokenKind(Identifier),
+			TokenKind(While),
+			TokenKind(Identifier),
+		})
 }

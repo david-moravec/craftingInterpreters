@@ -10,6 +10,14 @@ func isDigit(c byte) bool {
 	return '0' <= c && c <= '9'
 }
 
+func isAlpha(c byte) bool {
+	return 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || c == '_'
+}
+
+func isAlphanumeric(c byte) bool {
+	return isAlpha(c) || isDigit(c)
+}
+
 type Scanner struct {
 	source       string
 	tokens       []Token
@@ -116,6 +124,33 @@ func (s *Scanner) createString() (TokenKind, string, float64, error) {
 	literal := s.source[s.lexeme_start+1 : s.current_char-1]
 
 	return TokenKind(String), literal, math.NaN(), nil
+}
+
+func (s *Scanner) createIdentifier() (TokenKind, string, float64, error) {
+	for {
+		c, err := s.peek()
+
+		if err != nil {
+			break
+		}
+
+		if isAlphanumeric(c) {
+			s.advance()
+		} else {
+			break
+		}
+	}
+
+	current := s.source[s.lexeme_start:s.current_char]
+
+	t, ok := Keywords[current]
+
+	if !ok {
+		return TokenKind(Identifier), "", math.NaN(), nil
+	}
+
+	return TokenKind(t), "", math.NaN(), nil
+
 }
 
 func (s *Scanner) createNumber() (TokenKind, string, float64, error) {
@@ -228,6 +263,9 @@ func (s *Scanner) resolveTokenKind() (TokenKind, string, float64, error) {
 	default:
 		if isDigit(c) {
 			return s.createNumber()
+		}
+		if isAlphanumeric(c) {
+			return s.createIdentifier()
 		}
 		return TokenKind(EOF), "", math.NaN(), errors.New("Token not Recognized")
 	}
