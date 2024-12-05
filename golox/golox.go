@@ -3,12 +3,13 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/david-moravec/golox/internal/scanner"
 	"os"
 )
 
 func run(source string) error {
-	scanner := Scanner{source: source}
-	tokens, err := scanner.scanTokens()
+	scanner := scanner.NewScanner(source)
+	tokens, err := scanner.ScanTokens()
 
 	if err != nil {
 		return err

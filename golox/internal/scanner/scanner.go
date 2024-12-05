@@ -1,4 +1,4 @@
-package main
+package scanner
 
 import (
 	"errors"
@@ -18,6 +18,15 @@ func isAlphanumeric(c byte) bool {
 	return isAlpha(c) || isDigit(c)
 }
 
+func NewScanner(source string) *Scanner {
+	return &Scanner{source: source,
+		tokens:       []Token{},
+		lexeme_start: 0,
+		current_char: 0,
+		line:         0}
+
+}
+
 type Scanner struct {
 	source       string
 	tokens       []Token
@@ -26,7 +35,7 @@ type Scanner struct {
 	line         int
 }
 
-func (s Scanner) scanTokens() ([]Token, error) {
+func (s *Scanner) ScanTokens() ([]Token, error) {
 	var errs []error
 
 	for !s.isAtEnd() {
