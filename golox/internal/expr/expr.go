@@ -52,11 +52,11 @@ const (
 
 type LiteralExpr struct {
 	litType LiteralType
-	number  int
+	number  float64
 	str     string
 }
 
-func NewLiteral(t LiteralType, n int, str string) *LiteralExpr {
+func NewLiteral(t LiteralType, n float64, str string) *LiteralExpr {
 	return &LiteralExpr{litType: t, number: n, str: str}
 }
 
@@ -66,6 +66,10 @@ func (e LiteralExpr) accept(visitor ExprVisitor) any {
 
 type GroupingExpr struct {
 	expression Expr
+}
+
+func NewGroup(e Expr) *GroupingExpr {
+	return &GroupingExpr{e}
 }
 
 func (e GroupingExpr) accept(visitor ExprVisitor) any {

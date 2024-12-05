@@ -23,7 +23,7 @@ func (p AstPrinter) visitBinaryExpr(expr BinaryExpr) any {
 func (p AstPrinter) visitLiteralExpr(expr LiteralExpr) any {
 	switch expr.litType {
 	case NumberType:
-		return strconv.Itoa(expr.number)
+		return strconv.FormatFloat(expr.number, 'f', -1, 64)
 	case StringType:
 		return expr.str
 	case BoolType:

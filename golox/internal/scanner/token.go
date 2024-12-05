@@ -121,8 +121,8 @@ func (t TokenKind) String() string {
 type Token struct {
 	Kind    TokenKind
 	lexeme  string
-	literal string
-	value   float64
+	Literal string
+	Value   float64
 	line    int
 }
 
