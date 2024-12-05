@@ -119,13 +119,17 @@ func (t TokenKind) String() string {
 }
 
 type Token struct {
-	kind    TokenKind
+	Kind    TokenKind
 	lexeme  string
 	literal string
 	value   float64
 	line    int
 }
 
+func NewToken(k TokenKind, l string, lit string, val float64, line int) *Token {
+	return &Token{k, l, lit, val, line}
+}
+
 func (t Token) String() string {
-	return t.kind.String()
+	return t.Kind.String()
 }

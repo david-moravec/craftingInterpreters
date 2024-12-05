@@ -1,14 +1,26 @@
 package expr
 
+import (
+	"github.com/david-moravec/golox/internal/scanner"
+)
+
 type Expr interface {
 	accept(ExprVisitor) any
 }
 
-type Operator byte
+type Operator scanner.Token
+
+func (o Operator) String() string {
+	return scanner.Token(o).String()
+}
 
 type UnaryExpr struct {
 	operator Operator
 	right    Expr
+}
+
+func NewUnary(o Operator, r Expr) *UnaryExpr {
+	return &UnaryExpr{operator: o, right: r}
 }
 
 func (e UnaryExpr) accept(visitor ExprVisitor) any {
@@ -17,8 +29,12 @@ func (e UnaryExpr) accept(visitor ExprVisitor) any {
 
 type BinaryExpr struct {
 	left     Expr
-	right    Expr
 	operator Operator
+	right    Expr
+}
+
+func NewBinary(left Expr, right Expr, operator Operator) *BinaryExpr {
+	return &BinaryExpr{left: left, operator: operator, right: right}
 }
 
 func (e BinaryExpr) accept(visitor ExprVisitor) any {
@@ -35,9 +51,13 @@ const (
 )
 
 type LiteralExpr struct {
-	lit_type LiteralType
-	number   int
-	str      string
+	litType LiteralType
+	number  int
+	str     string
+}
+
+func NewLiteral(t LiteralType, n int, str string) *LiteralExpr {
+	return &LiteralExpr{litType: t, number: n, str: str}
 }
 
 func (e LiteralExpr) accept(visitor ExprVisitor) any {

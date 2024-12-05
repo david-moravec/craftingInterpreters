@@ -13,15 +13,15 @@ func (p AstPrinter) print(e Expr) string {
 }
 
 func (p AstPrinter) visitUnaryExpr(expr UnaryExpr) any {
-	return p.parenthesize(string(expr.operator), []Expr{expr.right})
+	return p.parenthesize(expr.operator.String(), []Expr{expr.right})
 
 }
 func (p AstPrinter) visitBinaryExpr(expr BinaryExpr) any {
-	return p.parenthesize(string(expr.operator), []Expr{expr.left, expr.right})
+	return p.parenthesize(expr.operator.String(), []Expr{expr.left, expr.right})
 
 }
 func (p AstPrinter) visitLiteralExpr(expr LiteralExpr) any {
-	switch expr.lit_type {
+	switch expr.litType {
 	case NumberType:
 		return strconv.Itoa(expr.number)
 	case StringType:

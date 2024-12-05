@@ -1,25 +1,26 @@
 package expr
 
 import (
+	"github.com/david-moravec/golox/internal/scanner"
 	"testing"
 )
 
 func Test_printer(t *testing.T) {
 	e := &BinaryExpr{
 		left: &UnaryExpr{
-			operator: '-',
+			operator: Operator(*scanner.NewToken(scanner.Minus, "-", "", 0, 1)),
 			right: LiteralExpr{
-				lit_type: LiteralType(NumberType),
-				number:   123,
+				litType: NumberType,
+				number:  123,
 			},
 		},
 		right: &GroupingExpr{
 			expression: LiteralExpr{
-				lit_type: LiteralType(NumberType),
-				number:   45,
+				litType: NumberType,
+				number:  45,
 			},
 		},
-		operator: '*',
+		operator: Operator(*scanner.NewToken(scanner.Star, "*", "", 0, 1)),
 	}
 
 	p := AstPrinter{}

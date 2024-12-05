@@ -7,7 +7,7 @@ import (
 func test_for_token_kind(t *testing.T, source string, kinds []TokenKind) {
 	scanner := Scanner{source: source}
 
-	tokens, err := scanner.scanTokens()
+	tokens, err := scanner.ScanTokens()
 
 	if err != nil {
 		t.Error("Gor error", err)
@@ -23,8 +23,8 @@ func test_for_token_kind(t *testing.T, source string, kinds []TokenKind) {
 	}
 
 	for i, token := range tokens {
-		if token.kind != kinds[i] {
-			t.Errorf("Incorect %d token expected %s, got %s", i, kinds[i], token.kind)
+		if token.Kind != kinds[i] {
+			t.Errorf("Incorect %d token expected %s, got %s", i, kinds[i], token.Kind)
 		}
 	}
 }
@@ -32,7 +32,7 @@ func test_for_token_kind(t *testing.T, source string, kinds []TokenKind) {
 func test_for_literal(t *testing.T, source string, literal string) {
 	scanner := Scanner{source: source}
 
-	tokens, err := scanner.scanTokens()
+	tokens, err := scanner.ScanTokens()
 
 	if err != nil {
 		t.Error("Gor error", err)
@@ -47,7 +47,7 @@ func test_for_literal(t *testing.T, source string, literal string) {
 func test_for_number(t *testing.T, source string, value float64) {
 	scanner := Scanner{source: source}
 
-	tokens, err := scanner.scanTokens()
+	tokens, err := scanner.ScanTokens()
 
 	if err != nil {
 		t.Error("Gor error", err)
