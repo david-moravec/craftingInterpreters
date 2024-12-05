@@ -96,7 +96,7 @@ func (s *Scanner) match(expected byte) bool {
 
 func (s *Scanner) addToken(token_kind TokenKind, literal string, value float64) {
 	switch token_kind {
-	case TokenKind(Meaningless):
+	case Meaningless:
 		return
 	default:
 		s.tokens = append(s.tokens, Token{token_kind, s.source[s.lexeme_start:s.current_char], literal, value, s.line})
@@ -124,7 +124,7 @@ func (s *Scanner) createString() (TokenKind, string, float64, error) {
 	}
 
 	if s.isAtEnd() {
-		return TokenKind(EOF), "", math.NaN(), errors.New("Unterminated string")
+		return EOF, "", math.NaN(), errors.New("Unterminated string")
 	}
 
 	//closing "
@@ -132,7 +132,7 @@ func (s *Scanner) createString() (TokenKind, string, float64, error) {
 
 	literal := s.source[s.lexeme_start+1 : s.current_char-1]
 
-	return TokenKind(String), literal, math.NaN(), nil
+	return String, literal, math.NaN(), nil
 }
 
 func (s *Scanner) createIdentifier() (TokenKind, string, float64, error) {
@@ -155,10 +155,10 @@ func (s *Scanner) createIdentifier() (TokenKind, string, float64, error) {
 	t, ok := Keywords[current]
 
 	if !ok {
-		return TokenKind(Identifier), "", math.NaN(), nil
+		return Identifier, "", math.NaN(), nil
 	}
 
-	return TokenKind(t), "", math.NaN(), nil
+	return t, "", math.NaN(), nil
 
 }
 
@@ -172,11 +172,11 @@ func (s *Scanner) createNumber() (TokenKind, string, float64, error) {
 	}
 	c, err := s.peek()
 	if err != nil {
-		return TokenKind(Number), "", 0, err
+		return Number, "", 0, err
 	}
 	next_c, err := s.peekNext()
 	if err != nil {
-		return TokenKind(Number), "", 0, err
+		return Number, "", 0, err
 	}
 	if c == '.' && isDigit(next_c) {
 		s.advance()
@@ -191,7 +191,7 @@ func (s *Scanner) createNumber() (TokenKind, string, float64, error) {
 
 	value, err := strconv.ParseFloat(s.source[s.lexeme_start:s.current_char], 64)
 
-	return TokenKind(Number), "", value, err
+	return Number, "", value, err
 }
 
 func (s *Scanner) resolveTokenKind() (TokenKind, string, float64, error) {
@@ -199,48 +199,48 @@ func (s *Scanner) resolveTokenKind() (TokenKind, string, float64, error) {
 
 	switch c {
 	case '(':
-		return TokenKind(LeftParenthesis), "", math.NaN(), nil
+		return LeftParenthesis, "", math.NaN(), nil
 	case ')':
-		return TokenKind(RightParenthesis), "", math.NaN(), nil
+		return RightParenthesis, "", math.NaN(), nil
 	case '{':
-		return TokenKind(LeftBrace), "", math.NaN(), nil
+		return LeftBrace, "", math.NaN(), nil
 	case '}':
-		return TokenKind(RightBrace), "", math.NaN(), nil
+		return RightBrace, "", math.NaN(), nil
 	case ',':
-		return TokenKind(Comma), "", math.NaN(), nil
+		return Comma, "", math.NaN(), nil
 	case '.':
-		return TokenKind(Dot), "", math.NaN(), nil
+		return Dot, "", math.NaN(), nil
 	case '-':
-		return TokenKind(Minus), "", math.NaN(), nil
+		return Minus, "", math.NaN(), nil
 	case '+':
-		return TokenKind(Plus), "", math.NaN(), nil
+		return Plus, "", math.NaN(), nil
 	case ';':
-		return TokenKind(Semicolon), "", math.NaN(), nil
+		return Semicolon, "", math.NaN(), nil
 	case '*':
-		return TokenKind(Star), "", math.NaN(), nil
+		return Star, "", math.NaN(), nil
 	case '!':
 		if s.match('=') {
-			return TokenKind(BangEqual), "", math.NaN(), nil
+			return BangEqual, "", math.NaN(), nil
 		} else {
-			return TokenKind(Bang), "", math.NaN(), nil
+			return Bang, "", math.NaN(), nil
 		}
 	case '=':
 		if s.match('=') {
-			return TokenKind(EqualEqual), "", math.NaN(), nil
+			return EqualEqual, "", math.NaN(), nil
 		} else {
-			return TokenKind(Equal), "", math.NaN(), nil
+			return Equal, "", math.NaN(), nil
 		}
 	case '<':
 		if s.match('=') {
-			return TokenKind(LessEqual), "", math.NaN(), nil
+			return LessEqual, "", math.NaN(), nil
 		} else {
-			return TokenKind(Less), "", math.NaN(), nil
+			return Less, "", math.NaN(), nil
 		}
 	case '>':
 		if s.match('=') {
-			return TokenKind(GreaterEqual), "", math.NaN(), nil
+			return GreaterEqual, "", math.NaN(), nil
 		} else {
-			return TokenKind(Greater), "", math.NaN(), nil
+			return Greater, "", math.NaN(), nil
 		}
 	case '\\':
 		if s.match('\\') {
@@ -248,7 +248,7 @@ func (s *Scanner) resolveTokenKind() (TokenKind, string, float64, error) {
 				c, err := s.peek()
 
 				if err != nil {
-					return TokenKind(EOF), "", math.NaN(), err
+					return EOF, "", math.NaN(), err
 				}
 
 				if c == '\n' {
@@ -258,15 +258,15 @@ func (s *Scanner) resolveTokenKind() (TokenKind, string, float64, error) {
 			}
 
 			s.line += 1
-			return TokenKind(Meaningless), "", math.NaN(), nil
+			return Meaningless, "", math.NaN(), nil
 		} else {
-			return TokenKind(Slash), "", math.NaN(), nil
+			return Slash, "", math.NaN(), nil
 		}
 	case ' ', '\r', '\t':
-		return TokenKind(Meaningless), "", math.NaN(), nil
+		return Meaningless, "", math.NaN(), nil
 	case '\n':
 		s.line += 1
-		return TokenKind(Meaningless), "", math.NaN(), nil
+		return Meaningless, "", math.NaN(), nil
 	case '"':
 		return s.createString()
 	default:
@@ -276,6 +276,6 @@ func (s *Scanner) resolveTokenKind() (TokenKind, string, float64, error) {
 		if isAlphanumeric(c) {
 			return s.createIdentifier()
 		}
-		return TokenKind(EOF), "", math.NaN(), errors.New("Token not Recognized")
+		return EOF, "", math.NaN(), errors.New("Token not Recognized")
 	}
 }
