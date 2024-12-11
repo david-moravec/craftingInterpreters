@@ -120,10 +120,10 @@ func (t TokenKind) String() string {
 
 type Token struct {
 	Kind    TokenKind
-	lexeme  string
+	Lexeme  string
 	Literal string
 	Value   float64
-	line    int
+	Line    int
 }
 
 func NewToken(k TokenKind, l string, lit string, val float64, line int) *Token {

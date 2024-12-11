@@ -2,6 +2,7 @@ package scanner
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"strconv"
 )
@@ -27,6 +28,15 @@ func NewScanner(source string) *Scanner {
 
 }
 
+type scannerError struct {
+	line   int
+	lexeme string
+}
+
+func (e scannerError) Error() string {
+	return fmt.Sprintf("Error [line %d]: Token '%s' not recognized", e.line, e.lexeme)
+}
+
 type Scanner struct {
 	source       string
 	tokens       []Token
@@ -35,7 +45,7 @@ type Scanner struct {
 	line         int
 }
 
-func (s *Scanner) ScanTokens() ([]Token, error) {
+func (s Scanner) ScanTokens() ([]Token, error) {
 	var errs []error
 
 	for !s.isAtEnd() {
@@ -55,17 +65,11 @@ func (s *Scanner) ScanTokens() ([]Token, error) {
 	return s.tokens, nil
 }
 
-func (s *Scanner) isAtEnd() bool {
+func (s Scanner) isAtEnd() bool {
 	return s.current_char >= len(s.source)
 }
 
-func (s *Scanner) advance() byte {
-	current := s.source[s.current_char]
-	s.current_char += 1
-	return current
-}
-
-func (s *Scanner) peek() (byte, error) {
+func (s Scanner) peek() (byte, error) {
 	if s.isAtEnd() {
 		return 'x', errors.New("End of file reached")
 	} else {
@@ -73,12 +77,23 @@ func (s *Scanner) peek() (byte, error) {
 	}
 }
 
-func (s *Scanner) peekNext() (byte, error) {
+func (s Scanner) peekNext() (byte, error) {
 	if s.current_char+1 > len(s.source) {
 		return 'x', errors.New("EOF reached")
 	}
 
 	return s.source[s.current_char+1], nil
+}
+
+func (s Scanner) peekCurrentLexeme() string {
+	return s.source[s.lexeme_start:s.current_char]
+
+}
+
+func (s *Scanner) advance() byte {
+	current := s.source[s.current_char]
+	s.current_char += 1
+	return current
 }
 
 func (s *Scanner) match(expected byte) bool {
@@ -276,6 +291,6 @@ func (s *Scanner) resolveTokenKind() (TokenKind, string, float64, error) {
 		if isAlphanumeric(c) {
 			return s.createIdentifier()
 		}
-		return EOF, "", math.NaN(), errors.New("Token not Recognized")
+		return EOF, "", math.NaN(), scannerError{s.line, s.peekCurrentLexeme()}
 	}
 }

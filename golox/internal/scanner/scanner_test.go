@@ -38,8 +38,8 @@ func test_for_literal(t *testing.T, source string, literal string) {
 		t.Error("Gor error", err)
 	}
 
-	if tokens[0].literal != literal {
-		t.Errorf("Incorect expected %s, got %s", literal, tokens[0].literal)
+	if tokens[0].Literal != literal {
+		t.Errorf("Incorect expected %s, got %s", literal, tokens[0].Literal)
 	}
 
 }
@@ -53,8 +53,8 @@ func test_for_number(t *testing.T, source string, value float64) {
 		t.Error("Gor error", err)
 	}
 
-	if tokens[0].value != value {
-		t.Errorf("Incorect expected %f, got %f", value, tokens[0].value)
+	if tokens[0].Value != value {
+		t.Errorf("Incorect expected %f, got %f", value, tokens[0].Value)
 	}
 
 }

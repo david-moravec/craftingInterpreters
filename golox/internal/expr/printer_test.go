@@ -25,7 +25,7 @@ func Test_printer(t *testing.T) {
 
 	p := AstPrinter{}
 
-	result := p.print(e)
+	result := p.Print(e)
 
 	ast := "(* (- 123) (group 45))"
 
