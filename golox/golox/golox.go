@@ -3,6 +3,8 @@ package golox
 import (
 	"bufio"
 	"fmt"
+	"github.com/david-moravec/golox/internal/expr"
+	"github.com/david-moravec/golox/internal/parser"
 	"github.com/david-moravec/golox/internal/scanner"
 	"os"
 )
@@ -15,9 +17,18 @@ func run(source string) error {
 		return err
 	}
 
-	for _, token := range tokens {
-		fmt.Println(token)
+	p := parser.NewParser(tokens)
+	e, err := p.Parse()
+
+	if err != nil {
+		return err
 	}
+
+	// for _, token := range tokens {
+	// 	fmt.Println(token)
+	// }
+
+	fmt.Println(expr.NewPrinter().Print(e))
 
 	return nil
 }
@@ -30,13 +41,13 @@ func (g *GoLox) RunFile(filename string) {
 	bytes, err := os.ReadFile(filename)
 
 	if err != nil {
-		g.error(err)
+		g.HandleError(err)
 	}
 
 	err = run(string(bytes))
 
 	if err != nil {
-		g.error(err)
+		g.HandleError(err)
 	}
 
 	if g.hadError {
@@ -51,7 +62,7 @@ func (g *GoLox) RunPrompt() {
 		fmt.Print("> ")
 		line, err := reader.ReadString('\n')
 		if err != nil {
-			g.error(err)
+			g.HandleError(err)
 		}
 		if line == "" {
 			break
@@ -61,7 +72,7 @@ func (g *GoLox) RunPrompt() {
 	}
 }
 
-func (g *GoLox) error(err error) {
+func (g *GoLox) HandleError(err error) {
 	fmt.Printf(err.Error())
 	g.hadError = true
 }

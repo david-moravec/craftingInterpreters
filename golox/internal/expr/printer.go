@@ -8,7 +8,11 @@ import (
 type AstPrinter struct {
 }
 
-func (p AstPrinter) print(e Expr) string {
+func NewPrinter() AstPrinter {
+	return AstPrinter{}
+}
+
+func (p AstPrinter) Print(e Expr) string {
 	return e.accept(p).(string)
 }
 
@@ -45,7 +49,7 @@ func (p *AstPrinter) parenthesize(name string, expressions []Expr) string {
 	s.WriteString(name)
 
 	for _, e := range expressions {
-		s.WriteString(" " + p.print(e))
+		s.WriteString(" " + p.Print(e))
 
 	}
 	s.WriteByte(')')
