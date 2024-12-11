@@ -1,4 +1,4 @@
-package main
+package golox
 
 import (
 	"bufio"
@@ -26,17 +26,17 @@ type GoLox struct {
 	hadError bool
 }
 
-func (g *GoLox) runFile(filename string) {
+func (g *GoLox) RunFile(filename string) {
 	bytes, err := os.ReadFile(filename)
 
 	if err != nil {
-		g.error(0, err)
+		g.error(err)
 	}
 
 	err = run(string(bytes))
 
 	if err != nil {
-		g.error(0, err)
+		g.error(err)
 	}
 
 	if g.hadError {
@@ -44,14 +44,14 @@ func (g *GoLox) runFile(filename string) {
 	}
 }
 
-func (g *GoLox) runPrompt() {
+func (g *GoLox) RunPrompt() {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
 		fmt.Print("> ")
 		line, err := reader.ReadString('\n')
 		if err != nil {
-			g.error(0, err)
+			g.error(err)
 		}
 		if line == "" {
 			break
@@ -61,11 +61,9 @@ func (g *GoLox) runPrompt() {
 	}
 }
 
-func (g *GoLox) report(line int, where string, message string) {
-	fmt.Printf("[line %d] Error%s: %s", line, where, message)
+func (g *GoLox) error(err error) {
+	fmt.Printf(err.Error())
 	g.hadError = true
 }
 
-func (g *GoLox) error(line int, err error) {
-	g.report(line, "", err.Error())
-}
+var GoLoxGlobal = GoLox{false}
