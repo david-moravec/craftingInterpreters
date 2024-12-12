@@ -5,7 +5,7 @@ import (
 )
 
 type Expr interface {
-	accept(ExprVisitor) any
+	Accept(ExprVisitor) any
 }
 
 type Operator scanner.Token
@@ -15,30 +15,30 @@ func (o Operator) String() string {
 }
 
 type UnaryExpr struct {
-	operator Operator
-	right    Expr
+	Operator Operator
+	Right    Expr
 }
 
 func NewUnary(o Operator, r Expr) *UnaryExpr {
-	return &UnaryExpr{operator: o, right: r}
+	return &UnaryExpr{Operator: o, Right: r}
 }
 
-func (e UnaryExpr) accept(visitor ExprVisitor) any {
-	return visitor.visitUnaryExpr(e)
+func (e UnaryExpr) Accept(visitor ExprVisitor) any {
+	return visitor.VisitUnaryExpr(e)
 }
 
 type BinaryExpr struct {
-	left     Expr
-	operator Operator
-	right    Expr
+	Left     Expr
+	Operator Operator
+	Right    Expr
 }
 
 func NewBinary(left Expr, right Expr, operator Operator) *BinaryExpr {
-	return &BinaryExpr{left: left, operator: operator, right: right}
+	return &BinaryExpr{Left: left, Operator: operator, Right: right}
 }
 
-func (e BinaryExpr) accept(visitor ExprVisitor) any {
-	return visitor.visitBinaryExpr(e)
+func (e BinaryExpr) Accept(visitor ExprVisitor) any {
+	return visitor.VisitBinaryExpr(e)
 }
 
 type LiteralType int
@@ -51,34 +51,34 @@ const (
 )
 
 type LiteralExpr struct {
-	litType LiteralType
-	number  float64
-	str     string
+	LitType LiteralType
+	Number  float64
+	Str     string
 }
 
 func NewLiteral(t LiteralType, n float64, str string) *LiteralExpr {
-	return &LiteralExpr{litType: t, number: n, str: str}
+	return &LiteralExpr{LitType: t, Number: n, Str: str}
 }
 
-func (e LiteralExpr) accept(visitor ExprVisitor) any {
-	return visitor.visitLiteralExpr(e)
+func (e LiteralExpr) Accept(visitor ExprVisitor) any {
+	return visitor.VisitLiteralExpr(e)
 }
 
 type GroupingExpr struct {
-	expression Expr
+	Expression Expr
 }
 
 func NewGroup(e Expr) *GroupingExpr {
 	return &GroupingExpr{e}
 }
 
-func (e GroupingExpr) accept(visitor ExprVisitor) any {
-	return visitor.visitGroupingExpr(e)
+func (e GroupingExpr) Accept(visitor ExprVisitor) any {
+	return visitor.VisitGroupingExpr(e)
 }
 
 type ExprVisitor interface {
-	visitUnaryExpr(expr UnaryExpr) any
-	visitBinaryExpr(expr BinaryExpr) any
-	visitLiteralExpr(expr LiteralExpr) any
-	visitGroupingExpr(expr GroupingExpr) any
+	VisitUnaryExpr(expr UnaryExpr) any
+	VisitBinaryExpr(expr BinaryExpr) any
+	VisitLiteralExpr(expr LiteralExpr) any
+	VisitGroupingExpr(expr GroupingExpr) any
 }

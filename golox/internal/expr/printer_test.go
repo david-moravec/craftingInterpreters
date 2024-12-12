@@ -7,20 +7,20 @@ import (
 
 func Test_printer(t *testing.T) {
 	e := &BinaryExpr{
-		left: &UnaryExpr{
-			operator: Operator(*scanner.NewToken(scanner.Minus, "-", "", 0, 1)),
-			right: LiteralExpr{
-				litType: NumberType,
-				number:  123,
+		Left: &UnaryExpr{
+			Operator: Operator(*scanner.NewToken(scanner.Minus, "-", "", 0, 1)),
+			Right: LiteralExpr{
+				LitType: NumberType,
+				Number:  123,
 			},
 		},
-		right: &GroupingExpr{
-			expression: LiteralExpr{
-				litType: NumberType,
-				number:  45,
+		Right: &GroupingExpr{
+			Expression: LiteralExpr{
+				LitType: NumberType,
+				Number:  45,
 			},
 		},
-		operator: Operator(*scanner.NewToken(scanner.Star, "*", "", 0, 1)),
+		Operator: Operator(*scanner.NewToken(scanner.Star, "*", "", 0, 1)),
 	}
 
 	p := AstPrinter{}
