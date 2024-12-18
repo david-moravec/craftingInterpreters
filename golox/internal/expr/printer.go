@@ -13,33 +13,34 @@ func NewPrinter() AstPrinter {
 }
 
 func (p AstPrinter) Print(e Expr) string {
-	return e.Accept(p).(string)
+	s, _ := e.Accept(p)
+	return s.(string)
 }
 
-func (p AstPrinter) VisitUnaryExpr(expr UnaryExpr) any {
-	return p.parenthesize(expr.Operator.String(), []Expr{expr.Right})
+func (p AstPrinter) VisitUnaryExpr(expr UnaryExpr) (any, error) {
+	return p.parenthesize(expr.Operator.String(), []Expr{expr.Right}), nil
 
 }
-func (p AstPrinter) VisitBinaryExpr(expr BinaryExpr) any {
-	return p.parenthesize(expr.Operator.String(), []Expr{expr.Left, expr.Right})
+func (p AstPrinter) VisitBinaryExpr(expr BinaryExpr) (any, error) {
+	return p.parenthesize(expr.Operator.String(), []Expr{expr.Left, expr.Right}), nil
 
 }
-func (p AstPrinter) VisitLiteralExpr(expr LiteralExpr) any {
+func (p AstPrinter) VisitLiteralExpr(expr LiteralExpr) (any, error) {
 	switch expr.LitType {
 	case NumberType:
-		return strconv.FormatFloat(expr.Number, 'f', -1, 64)
+		return strconv.FormatFloat(expr.Number, 'f', -1, 64), nil
 	case StringType:
-		return expr.Str
+		return expr.Str, nil
 	case BoolType:
-		return strconv.FormatBool(expr.Number != 0)
+		return strconv.FormatBool(expr.Number != 0), nil
 	case NilType:
-		return "nil"
+		return "nil", nil
 	}
 
-	return ""
+	return "", nil
 }
-func (p AstPrinter) VisitGroupingExpr(expr GroupingExpr) any {
-	return p.parenthesize("group", []Expr{expr.Expression})
+func (p AstPrinter) VisitGroupingExpr(expr GroupingExpr) (any, error) {
+	return p.parenthesize("group", []Expr{expr.Expression}), nil
 }
 
 func (p *AstPrinter) parenthesize(name string, expressions []Expr) string {
