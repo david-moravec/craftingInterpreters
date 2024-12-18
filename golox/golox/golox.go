@@ -3,10 +3,11 @@ package golox
 import (
 	"bufio"
 	"fmt"
-	"github.com/david-moravec/golox/internal/expr"
+	"os"
+
+	"github.com/david-moravec/golox/internal/interpreter"
 	"github.com/david-moravec/golox/internal/parser"
 	"github.com/david-moravec/golox/internal/scanner"
-	"os"
 )
 
 func run(source string) error {
@@ -24,11 +25,11 @@ func run(source string) error {
 		return err
 	}
 
-	// for _, token := range tokens {
-	// 	fmt.Println(token)
-	// }
+	err = interpreter.NewInterpreter().Interpret(e)
 
-	fmt.Println(expr.NewPrinter().Print(e))
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

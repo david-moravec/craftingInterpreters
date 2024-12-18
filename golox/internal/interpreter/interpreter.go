@@ -1,74 +1,169 @@
 package interpreter
 
 import (
+	"fmt"
+
 	"github.com/david-moravec/golox/internal/expr"
 	"github.com/david-moravec/golox/internal/scanner"
 )
 
+type interpreterError struct {
+	t       scanner.Token
+	message string
+}
+
+func (e interpreterError) Error() string {
+	return "Interpreter error"
+}
+
+type unknownTypeError struct {
+}
+
+func (e unknownTypeError) Error() string {
+	return "Unknown type error"
+}
+
 type Interpreter struct {
 }
 
-func (i Interpreter) evaluate(e expr.Expr) any {
+func NewInterpreter() Interpreter {
+	return Interpreter{}
+}
+
+func (i Interpreter) Interpret(e expr.Expr) error {
+	r, err := i.evaluate(e)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s\n", stringify(r))
+
+	return nil
+}
+
+func (i Interpreter) evaluate(e expr.Expr) (any, error) {
 	return e.Accept(i)
 
 }
 
-func (i Interpreter) VisitGroupingExpr(e expr.GroupingExpr) any {
+func (i Interpreter) VisitGroupingExpr(e expr.GroupingExpr) (any, error) {
 	return i.evaluate(e.Expression)
 }
 
-func (i Interpreter) VisitLiteralExpr(e expr.LiteralExpr) any {
-	return ""
+func (i Interpreter) VisitLiteralExpr(e expr.LiteralExpr) (any, error) {
+	switch e.LitType {
+	case expr.NumberType:
+		return e.Number, nil
+	case expr.StringType:
+		return e.Str, nil
+	case expr.BoolType:
+		return e.Number != 0, nil
+	case expr.NilType:
+		return nil, nil
+	}
+
+	return nil, unknownTypeError{}
 }
 
-func (i Interpreter) VisitBinaryExpr(e expr.BinaryExpr) any {
-	l := i.evaluate(e.Left)
-	r := i.evaluate(e.Right)
+func (i Interpreter) VisitBinaryExpr(e expr.BinaryExpr) (any, error) {
+	l, err := i.evaluate(e.Left)
+
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := i.evaluate(e.Right)
+	if err != nil {
+		return nil, err
+	}
+
+	var result any
 
 	switch e.Operator.Kind {
 	case scanner.Minus:
-		return l.(float64) - r.(float64)
+		if err = checkOperandsNumber(scanner.Token(e.Operator), l, r); err != nil {
+			return nil, err
+		}
+		result = l.(float64) - r.(float64)
 	case scanner.Plus:
 		switch l.(type) {
 		case float64:
-			return l.(float64) + r.(float64)
+			switch r.(type) {
+			case float64:
+				result = l.(float64) + r.(float64)
+			}
 		case string:
-			return l.(string) + r.(string)
-
+			switch r.(type) {
+			case string:
+				result = l.(string) + r.(string)
+			}
+		default:
+			return nil, interpreterError{scanner.Token(e.Operator), "Operands must be numbers or strings"}
 		}
 
 	case scanner.Slash:
-		return l.(float64) / r.(float64)
+		if err = checkOperandsNumber(scanner.Token(e.Operator), l, r); err != nil {
+			return nil, err
+		}
+		result = l.(float64) / r.(float64)
 	case scanner.Star:
-		return l.(float64) * r.(float64)
+		if err = checkOperandsNumber(scanner.Token(e.Operator), l, r); err != nil {
+			return nil, err
+		}
+		result = l.(float64) * r.(float64)
 	case scanner.Greater:
-		return l.(float64) > r.(float64)
+		if err = checkOperandsNumber(scanner.Token(e.Operator), l, r); err != nil {
+			return nil, err
+		}
+		result = l.(float64) > r.(float64)
 	case scanner.GreaterEqual:
-		return l.(float64) >= r.(float64)
+		if err = checkOperandsNumber(scanner.Token(e.Operator), l, r); err != nil {
+			return nil, err
+		}
+		result = l.(float64) >= r.(float64)
 	case scanner.Less:
-		return l.(float64) < r.(float64)
+		if err = checkOperandsNumber(scanner.Token(e.Operator), l, r); err != nil {
+			return nil, err
+		}
+		result = l.(float64) < r.(float64)
 	case scanner.LessEqual:
-		return l.(float64) >= r.(float64)
+		if err = checkOperandsNumber(scanner.Token(e.Operator), l, r); err != nil {
+			return nil, err
+		}
+		result = l.(float64) >= r.(float64)
 	case scanner.BangEqual:
-		return !isEqual(l, r)
+		if err = checkOperandsNumber(scanner.Token(e.Operator), l, r); err != nil {
+			return nil, err
+		}
+		result = !isEqual(l, r)
 	case scanner.EqualEqual:
-		return isEqual(l, r)
+		if err = checkOperandsNumber(scanner.Token(e.Operator), l, r); err != nil {
+			return nil, err
+		}
+		result = isEqual(l, r)
 	}
 
-	return nil
+	return result, err
 }
 
-func (i Interpreter) VisitUnaryExpr(e expr.UnaryExpr) any {
-	a := i.evaluate(e.Right)
+func (i Interpreter) VisitUnaryExpr(e expr.UnaryExpr) (any, error) {
+	a, err := i.evaluate(e.Right)
+
+	if err != nil {
+		return nil, err
+	}
 
 	switch e.Operator.Kind {
 	case scanner.Minus:
-		return -a.(float64)
+		if err := checkOperandNumber(scanner.Token(e.Operator), a); err != nil {
+			return nil, err
+		}
+		return -a.(float64), nil
 	case scanner.Bang:
-		return !isTruthy(a)
+		return !isTruthy(a), nil
 	}
 
-	return nil
+	return nil, nil
 }
 
 func isEqual(a any, b any) bool {
@@ -88,4 +183,39 @@ func isTruthy(a any) bool {
 	}
 
 	return true
+}
+
+func checkOperandNumber(o scanner.Token, r any) error {
+	switch r.(type) {
+	case float64:
+		return nil
+	}
+
+	return interpreterError{o, "Operand must be number"}
+}
+
+func checkOperandsNumber(o scanner.Token, l any, r any) error {
+	switch r.(type) {
+	case float64:
+		switch l.(type) {
+		case float64:
+			return nil
+		}
+	}
+
+	return interpreterError{o, "Operands must be numbers"}
+}
+
+func stringify(a any) string {
+	if a == nil {
+		return "Nil"
+	}
+	switch a.(type) {
+	case float64:
+		return fmt.Sprintf("%.2f", a)
+	case fmt.Stringer:
+		return a.(fmt.Stringer).String()
+	}
+
+	return ""
 }

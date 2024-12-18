@@ -5,7 +5,7 @@ import (
 )
 
 type Expr interface {
-	Accept(ExprVisitor) any
+	Accept(ExprVisitor) (any, error)
 }
 
 type Operator scanner.Token
@@ -23,7 +23,7 @@ func NewUnary(o Operator, r Expr) *UnaryExpr {
 	return &UnaryExpr{Operator: o, Right: r}
 }
 
-func (e UnaryExpr) Accept(visitor ExprVisitor) any {
+func (e UnaryExpr) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitUnaryExpr(e)
 }
 
@@ -37,7 +37,7 @@ func NewBinary(left Expr, right Expr, operator Operator) *BinaryExpr {
 	return &BinaryExpr{Left: left, Operator: operator, Right: right}
 }
 
-func (e BinaryExpr) Accept(visitor ExprVisitor) any {
+func (e BinaryExpr) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitBinaryExpr(e)
 }
 
@@ -60,7 +60,7 @@ func NewLiteral(t LiteralType, n float64, str string) *LiteralExpr {
 	return &LiteralExpr{LitType: t, Number: n, Str: str}
 }
 
-func (e LiteralExpr) Accept(visitor ExprVisitor) any {
+func (e LiteralExpr) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitLiteralExpr(e)
 }
 
@@ -72,13 +72,13 @@ func NewGroup(e Expr) *GroupingExpr {
 	return &GroupingExpr{e}
 }
 
-func (e GroupingExpr) Accept(visitor ExprVisitor) any {
+func (e GroupingExpr) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitGroupingExpr(e)
 }
 
 type ExprVisitor interface {
-	VisitUnaryExpr(expr UnaryExpr) any
-	VisitBinaryExpr(expr BinaryExpr) any
-	VisitLiteralExpr(expr LiteralExpr) any
-	VisitGroupingExpr(expr GroupingExpr) any
+	VisitUnaryExpr(expr UnaryExpr) (any, error)
+	VisitBinaryExpr(expr BinaryExpr) (any, error)
+	VisitLiteralExpr(expr LiteralExpr) (any, error)
+	VisitGroupingExpr(expr GroupingExpr) (any, error)
 }
