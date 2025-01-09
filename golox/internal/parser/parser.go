@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/david-moravec/golox/internal/expr"
 	"github.com/david-moravec/golox/internal/scanner"
+	"github.com/david-moravec/golox/internal/stmt"
 )
 
 type parseError struct {
@@ -30,8 +31,52 @@ func NewParser(tokens []scanner.Token) *Parser {
 	return &Parser{tokens, 0}
 }
 
-func (p Parser) Parse() (expr.Expr, error) {
-	return p.expression()
+func (p *Parser) Parse() ([]stmt.Stmt, []error) {
+	var stmts []stmt.Stmt
+	var errs []error
+
+	for {
+		if p.isAtEnd() {
+			break
+		}
+
+		stmt, err := p.statement()
+
+		if err != nil {
+			errs = append(errs, err)
+		}
+
+		stmts = append(stmts, stmt)
+	}
+
+	return stmts, errs
+}
+
+func (p *Parser) statement() (stmt.Stmt, error) {
+	if p.match(scanner.Print) {
+		return p.printStatement()
+	}
+
+	return p.expressionStatement()
+}
+
+func (p *Parser) expressionStatement() (stmt.ExpressionStmt, error) {
+	expr, err := p.expression()
+	if err != nil {
+		return stmt.ExpressionStmt{Expression: expr}, err
+	}
+	_, err = p.consume(scanner.Semicolon, "Expect ';' after expression.")
+	return stmt.ExpressionStmt{Expression: expr}, err
+
+}
+
+func (p *Parser) printStatement() (stmt.PrintStmt, error) {
+	expr, err := p.expression()
+	if err != nil {
+		return stmt.PrintStmt{Expression: expr}, err
+	}
+	_, err = p.consume(scanner.Semicolon, "Expect ';' after expression.")
+	return stmt.PrintStmt{Expression: expr}, err
 }
 
 func (p Parser) checkCurrentKind(k scanner.TokenKind) bool {

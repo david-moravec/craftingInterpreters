@@ -45,7 +45,7 @@ type Scanner struct {
 	line         int
 }
 
-func (s Scanner) ScanTokens() ([]Token, error) {
+func (s Scanner) ScanTokens() ([]Token, []error) {
 	var errs []error
 
 	for !s.isAtEnd() {
@@ -62,7 +62,7 @@ func (s Scanner) ScanTokens() ([]Token, error) {
 
 	s.tokens = append(s.tokens, Token{EOF, "", "", math.NaN(), s.line})
 
-	return s.tokens, nil
+	return s.tokens, errs
 }
 
 func (s Scanner) isAtEnd() bool {

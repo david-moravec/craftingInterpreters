@@ -5,6 +5,7 @@ import (
 
 	"github.com/david-moravec/golox/internal/expr"
 	"github.com/david-moravec/golox/internal/scanner"
+	"github.com/david-moravec/golox/internal/stmt"
 )
 
 type interpreterError struct {
@@ -30,15 +31,22 @@ func NewInterpreter() Interpreter {
 	return Interpreter{}
 }
 
-func (i Interpreter) Interpret(e expr.Expr) error {
-	r, err := i.evaluate(e)
-	if err != nil {
-		return err
+func (i Interpreter) Interpret(stmts []stmt.Stmt) []error {
+	var errs []error
+
+	for _, s := range stmts {
+		err := i.execute(s)
+
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
 
-	fmt.Printf("%s\n", stringify(r))
+	return errs
+}
 
-	return nil
+func (i Interpreter) execute(s stmt.Stmt) error {
+	return s.Accept(i)
 }
 
 func (i Interpreter) evaluate(e expr.Expr) (any, error) {
@@ -166,6 +174,24 @@ func (i Interpreter) VisitUnaryExpr(e expr.UnaryExpr) (any, error) {
 	return nil, nil
 }
 
+func (i Interpreter) VisitExpressionStmt(s stmt.ExpressionStmt) error {
+	_, err := i.evaluate(s.Expression)
+
+	return err
+}
+
+func (i Interpreter) VisitPrintStmt(s stmt.PrintStmt) error {
+	v, err := i.evaluate(s.Expression)
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(stringify(v))
+
+	return nil
+}
+
 func isEqual(a any, b any) bool {
 	if a == nil && b == nil {
 		return true
@@ -217,5 +243,5 @@ func stringify(a any) string {
 		return a.(fmt.Stringer).String()
 	}
 
-	return ""
+	return fmt.Sprint(a)
 }

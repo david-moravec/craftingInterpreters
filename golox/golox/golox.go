@@ -12,23 +12,29 @@ import (
 
 func run(source string) error {
 	scanner := scanner.NewScanner(source)
-	tokens, err := scanner.ScanTokens()
+	tokens, errs := scanner.ScanTokens()
 
-	if err != nil {
-		return err
+	if len(errs) != 0 {
+		fmt.Println(errs)
+
+		return nil
 	}
 
 	p := parser.NewParser(tokens)
-	e, err := p.Parse()
+	e, errs := p.Parse()
 
-	if err != nil {
-		return err
+	if len(errs) != 0 {
+		fmt.Println(errs)
+
+		return nil
 	}
 
-	err = interpreter.NewInterpreter().Interpret(e)
+	errs = interpreter.NewInterpreter().Interpret(e)
 
-	if err != nil {
-		return err
+	if len(errs) != 0 {
+		fmt.Println(errs)
+
+		return nil
 	}
 
 	return nil

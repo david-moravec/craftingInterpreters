@@ -92,22 +92,22 @@ var kind_2_string = [...]string{
 
 var Keywords = map[string]TokenKind{
 
-	"And":    And,
-	"Class":  Class,
-	"Else":   Else,
-	"False":  False,
-	"Fun":    Fun,
-	"For":    For,
-	"If":     If,
-	"Nil":    Nil,
-	"Or":     Or,
-	"Print":  Print,
-	"Return": Return,
-	"Super":  Super,
-	"This":   This,
-	"True":   True,
-	"Var":    Var,
-	"While":  While,
+	"and":    And,
+	"class":  Class,
+	"else":   Else,
+	"false":  False,
+	"fun":    Fun,
+	"for":    For,
+	"if":     If,
+	"nil":    Nil,
+	"or":     Or,
+	"print":  Print,
+	"return": Return,
+	"super":  Super,
+	"this":   This,
+	"true":   True,
+	"var":    Var,
+	"while":  While,
 }
 
 func (t TokenKind) String() string {
