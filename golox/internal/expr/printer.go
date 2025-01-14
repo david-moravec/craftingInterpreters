@@ -47,6 +47,10 @@ func (p AstPrinter) VisitVariableExpr(e VariableExpr) (any, error) {
 	return e.Name.String(), nil
 }
 
+func (p AstPrinter) VisitAssignExpr(e AssignExpr) (any, error) {
+	return e.Name.String(), nil
+}
+
 func (p *AstPrinter) parenthesize(name string, exprs []Expr) string {
 	s := new(bytes.Buffer)
 

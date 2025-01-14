@@ -50,7 +50,7 @@ func (i *Interpreter) execute(s stmt.Stmt) error {
 	return s.Accept(i)
 }
 
-func (i Interpreter) evaluate(e expr.Expr) (any, error) {
+func (i *Interpreter) evaluate(e expr.Expr) (any, error) {
 	return e.Accept(i)
 
 }
@@ -177,6 +177,16 @@ func (i Interpreter) VisitUnaryExpr(e expr.UnaryExpr) (any, error) {
 
 func (i Interpreter) VisitVariableExpr(e expr.VariableExpr) (any, error) {
 	return i.env.get(e.Name)
+}
+
+func (i *Interpreter) VisitAssignExpr(e expr.AssignExpr) (any, error) {
+	val, err := i.evaluate(e.Value)
+
+	if err != nil {
+		return val, err
+	}
+	err = i.env.assign(e.Name, val)
+	return val, err
 }
 
 func (i Interpreter) VisitExpressionStmt(s stmt.ExpressionStmt) error {

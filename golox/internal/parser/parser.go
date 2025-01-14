@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+
 	"github.com/david-moravec/golox/internal/expr"
 	"github.com/david-moravec/golox/internal/scanner"
 	"github.com/david-moravec/golox/internal/stmt"
@@ -124,7 +125,32 @@ func (p Parser) previous() *scanner.Token {
 }
 
 func (p *Parser) expression() (expr.Expr, error) {
-	return p.equality()
+	return p.assignment()
+}
+
+func (p *Parser) assignment() (expr.Expr, error) {
+	e, err := p.equality()
+	if err != nil {
+		return e, err
+	}
+	if p.match(scanner.Equal) {
+		eq := p.previous()
+		val, err := p.assignment()
+		if err != nil {
+			return val, err
+		}
+
+		switch e.(type) {
+		case expr.VariableExpr:
+			name := e.(expr.VariableExpr).Name
+			return expr.NewAssign(name, val), nil
+
+		}
+
+		return val, newParseError(*eq, "Invalid assignment target.")
+	}
+
+	return e, nil
 }
 
 func (p *Parser) equality() (expr.Expr, error) {

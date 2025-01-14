@@ -19,8 +19,8 @@ type UnaryExpr struct {
 	Right    Expr
 }
 
-func NewUnary(o Operator, r Expr) *UnaryExpr {
-	return &UnaryExpr{Operator: o, Right: r}
+func NewUnary(o Operator, r Expr) UnaryExpr {
+	return UnaryExpr{Operator: o, Right: r}
 }
 
 func (e UnaryExpr) Accept(visitor ExprVisitor) (any, error) {
@@ -33,8 +33,8 @@ type BinaryExpr struct {
 	Right    Expr
 }
 
-func NewBinary(left Expr, right Expr, operator Operator) *BinaryExpr {
-	return &BinaryExpr{Left: left, Operator: operator, Right: right}
+func NewBinary(left Expr, right Expr, operator Operator) BinaryExpr {
+	return BinaryExpr{Left: left, Operator: operator, Right: right}
 }
 
 func (e BinaryExpr) Accept(visitor ExprVisitor) (any, error) {
@@ -56,8 +56,8 @@ type LiteralExpr struct {
 	Str     string
 }
 
-func NewLiteral(t LiteralType, n float64, str string) *LiteralExpr {
-	return &LiteralExpr{LitType: t, Number: n, Str: str}
+func NewLiteral(t LiteralType, n float64, str string) LiteralExpr {
+	return LiteralExpr{LitType: t, Number: n, Str: str}
 }
 
 func (e LiteralExpr) Accept(visitor ExprVisitor) (any, error) {
@@ -68,8 +68,8 @@ type GroupingExpr struct {
 	Expression Expr
 }
 
-func NewGroup(e Expr) *GroupingExpr {
-	return &GroupingExpr{e}
+func NewGroup(e Expr) GroupingExpr {
+	return GroupingExpr{e}
 }
 
 func (e GroupingExpr) Accept(visitor ExprVisitor) (any, error) {
@@ -80,12 +80,25 @@ type VariableExpr struct {
 	Name scanner.Token
 }
 
-func NewVariable(name scanner.Token) *VariableExpr {
-	return &VariableExpr{Name: name}
+func NewVariable(name scanner.Token) VariableExpr {
+	return VariableExpr{Name: name}
 }
 
 func (e VariableExpr) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitVariableExpr(e)
+}
+
+type AssignExpr struct {
+	Name  scanner.Token
+	Value Expr
+}
+
+func NewAssign(name scanner.Token, value Expr) AssignExpr {
+	return AssignExpr{Name: name, Value: value}
+}
+
+func (e AssignExpr) Accept(v ExprVisitor) (any, error) {
+	return v.VisitAssignExpr(e)
 }
 
 type ExprVisitor interface {
@@ -94,4 +107,5 @@ type ExprVisitor interface {
 	VisitLiteralExpr(e LiteralExpr) (any, error)
 	VisitGroupingExpr(e GroupingExpr) (any, error)
 	VisitVariableExpr(e VariableExpr) (any, error)
+	VisitAssignExpr(e AssignExpr) (any, error)
 }
