@@ -40,16 +40,25 @@ func (p *Parser) Parse() ([]stmt.Stmt, []error) {
 			break
 		}
 
-		stmt, err := p.statement()
+		stmt, err := p.declaration()
 
 		if err != nil {
 			errs = append(errs, err)
+			p.synchronize()
 		}
 
 		stmts = append(stmts, stmt)
 	}
 
 	return stmts, errs
+}
+
+func (p *Parser) declaration() (stmt.Stmt, error) {
+	if p.match(scanner.Var) {
+		return p.varDeclaration()
+	} else {
+		return p.statement()
+	}
 }
 
 func (p *Parser) statement() (stmt.Stmt, error) {
@@ -65,8 +74,7 @@ func (p *Parser) expressionStatement() (stmt.ExpressionStmt, error) {
 	if err != nil {
 		return stmt.ExpressionStmt{Expression: expr}, err
 	}
-	_, err = p.consume(scanner.Semicolon, "Expect ';' after expression.")
-	return stmt.ExpressionStmt{Expression: expr}, err
+	return stmt.ExpressionStmt{Expression: expr}, p.consume_semicolon()
 
 }
 
@@ -75,8 +83,24 @@ func (p *Parser) printStatement() (stmt.PrintStmt, error) {
 	if err != nil {
 		return stmt.PrintStmt{Expression: expr}, err
 	}
-	_, err = p.consume(scanner.Semicolon, "Expect ';' after expression.")
-	return stmt.PrintStmt{Expression: expr}, err
+	return stmt.PrintStmt{Expression: expr}, p.consume_semicolon()
+}
+
+func (p *Parser) varDeclaration() (stmt.VarStmt, error) {
+	name, err := p.consume(scanner.Identifier, "Expect variable name.")
+	if err != nil {
+		return stmt.VarStmt{Name: nil, Initializer: nil}, err
+	}
+	var init *expr.Expr = nil
+	if p.match(scanner.Equal) {
+		e, err := p.expression()
+		if err != nil {
+			return stmt.VarStmt{Name: name, Initializer: nil}, err
+		}
+		init = &e
+	}
+	return stmt.VarStmt{Name: name, Initializer: init}, p.consume_semicolon()
+
 }
 
 func (p Parser) checkCurrentKind(k scanner.TokenKind) bool {
@@ -237,6 +261,8 @@ func (p *Parser) primary() (expr.Expr, error) {
 		return expr.NewLiteral(expr.NumberType, p.previous().Value, ""), nil
 	} else if p.match(scanner.String) {
 		return expr.NewLiteral(expr.StringType, 0, p.previous().Literal), nil
+	} else if p.match(scanner.Identifier) {
+		return expr.NewVariable(*p.previous()), nil
 	} else if p.match(scanner.LeftParenthesis) {
 		e, err := p.expression()
 		if err != nil {
@@ -260,6 +286,12 @@ func (p *Parser) consume(k scanner.TokenKind, message string) (*scanner.Token, e
 	}
 
 	return nil, newParseError(p.peek(), message)
+}
+
+func (p *Parser) consume_semicolon() error {
+	_, err := p.consume(scanner.Semicolon, "Expect ';' after expression.")
+
+	return err
 }
 
 func (p *Parser) synchronize() {

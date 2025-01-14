@@ -10,7 +10,7 @@ import (
 	"github.com/david-moravec/golox/internal/scanner"
 )
 
-func run(source string) error {
+func run(source string, interpreter interpreter.Interpreter) error {
 	scanner := scanner.NewScanner(source)
 	tokens, errs := scanner.ScanTokens()
 
@@ -29,7 +29,7 @@ func run(source string) error {
 		return nil
 	}
 
-	errs = interpreter.NewInterpreter().Interpret(e)
+	errs = interpreter.Interpret(e)
 
 	if len(errs) != 0 {
 		fmt.Println(errs)
@@ -50,8 +50,9 @@ func (g *GoLox) RunFile(filename string) {
 	if err != nil {
 		g.HandleError(err)
 	}
+	interpreter := interpreter.NewInterpreter()
 
-	err = run(string(bytes))
+	err = run(string(bytes), interpreter)
 
 	if err != nil {
 		g.HandleError(err)
@@ -64,6 +65,7 @@ func (g *GoLox) RunFile(filename string) {
 
 func (g *GoLox) RunPrompt() {
 	reader := bufio.NewReader(os.Stdin)
+	interpreter := interpreter.NewInterpreter()
 
 	for {
 		fmt.Print("> ")
@@ -74,7 +76,7 @@ func (g *GoLox) RunPrompt() {
 		if line == "" {
 			break
 		}
-		run(line)
+		run(line, interpreter)
 		g.hadError = false
 	}
 }

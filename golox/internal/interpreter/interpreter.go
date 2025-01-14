@@ -25,13 +25,14 @@ func (e unknownTypeError) Error() string {
 }
 
 type Interpreter struct {
+	env Environment
 }
 
 func NewInterpreter() Interpreter {
-	return Interpreter{}
+	return Interpreter{env: NewEnvironment()}
 }
 
-func (i Interpreter) Interpret(stmts []stmt.Stmt) []error {
+func (i *Interpreter) Interpret(stmts []stmt.Stmt) []error {
 	var errs []error
 
 	for _, s := range stmts {
@@ -45,7 +46,7 @@ func (i Interpreter) Interpret(stmts []stmt.Stmt) []error {
 	return errs
 }
 
-func (i Interpreter) execute(s stmt.Stmt) error {
+func (i *Interpreter) execute(s stmt.Stmt) error {
 	return s.Accept(i)
 }
 
@@ -174,6 +175,10 @@ func (i Interpreter) VisitUnaryExpr(e expr.UnaryExpr) (any, error) {
 	return nil, nil
 }
 
+func (i Interpreter) VisitVariableExpr(e expr.VariableExpr) (any, error) {
+	return i.env.get(e.Name)
+}
+
 func (i Interpreter) VisitExpressionStmt(s stmt.ExpressionStmt) error {
 	_, err := i.evaluate(s.Expression)
 
@@ -188,6 +193,18 @@ func (i Interpreter) VisitPrintStmt(s stmt.PrintStmt) error {
 	}
 
 	fmt.Println(stringify(v))
+
+	return nil
+}
+
+func (i *Interpreter) VisitVarStmt(s stmt.VarStmt) error {
+	val, err := i.evaluate(*s.Initializer)
+
+	if err != nil {
+		return err
+	}
+
+	i.env.define(s.Name.Lexeme, val)
 
 	return nil
 }

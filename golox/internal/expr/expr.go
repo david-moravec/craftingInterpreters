@@ -76,9 +76,22 @@ func (e GroupingExpr) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitGroupingExpr(e)
 }
 
+type VariableExpr struct {
+	Name scanner.Token
+}
+
+func NewVariable(name scanner.Token) *VariableExpr {
+	return &VariableExpr{Name: name}
+}
+
+func (e VariableExpr) Accept(visitor ExprVisitor) (any, error) {
+	return visitor.VisitVariableExpr(e)
+}
+
 type ExprVisitor interface {
-	VisitUnaryExpr(expr UnaryExpr) (any, error)
-	VisitBinaryExpr(expr BinaryExpr) (any, error)
-	VisitLiteralExpr(expr LiteralExpr) (any, error)
-	VisitGroupingExpr(expr GroupingExpr) (any, error)
+	VisitUnaryExpr(e UnaryExpr) (any, error)
+	VisitBinaryExpr(e BinaryExpr) (any, error)
+	VisitLiteralExpr(e LiteralExpr) (any, error)
+	VisitGroupingExpr(e GroupingExpr) (any, error)
+	VisitVariableExpr(e VariableExpr) (any, error)
 }
