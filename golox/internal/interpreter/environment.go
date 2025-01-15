@@ -7,11 +7,16 @@ import (
 )
 
 type Environment struct {
-	values map[string]any
+	values    map[string]any
+	enclosing *Environment
 }
 
-func NewEnvironment() Environment {
-	return Environment{values: map[string]any{}}
+func NewGlobalEnvironment() Environment {
+	return Environment{values: map[string]any{}, enclosing: nil}
+}
+
+func NewEnvironment(enclosing *Environment) Environment {
+	return Environment{values: map[string]any{}, enclosing: enclosing}
 }
 
 func (e *Environment) define(name string, value any) {
@@ -21,6 +26,9 @@ func (e *Environment) define(name string, value any) {
 func (e Environment) get(name scanner.Token) (any, error) {
 	val, ok := e.values[name.Lexeme]
 	if !ok {
+		if e.enclosing != nil {
+			return e.enclosing.get(name)
+		}
 		return nil, errors.New(fmt.Sprintf("Undefined variable '%s'", name.Lexeme))
 	}
 	return val, nil
@@ -29,6 +37,9 @@ func (e Environment) get(name scanner.Token) (any, error) {
 func (e *Environment) assign(name scanner.Token, value any) error {
 	_, ok := e.values[name.Lexeme]
 	if !ok {
+		if e.enclosing != nil {
+			return e.enclosing.assign(name, value)
+		}
 		return errors.New(fmt.Sprintf("Undefined variable '%s'", name.Lexeme))
 	}
 	e.values[name.Lexeme] = value

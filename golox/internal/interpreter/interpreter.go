@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/david-moravec/golox/internal/expr"
@@ -29,7 +30,7 @@ type Interpreter struct {
 }
 
 func NewInterpreter() Interpreter {
-	return Interpreter{env: NewEnvironment()}
+	return Interpreter{env: NewGlobalEnvironment()}
 }
 
 func (i *Interpreter) Interpret(stmts []stmt.Stmt) []error {
@@ -48,6 +49,18 @@ func (i *Interpreter) Interpret(stmts []stmt.Stmt) []error {
 
 func (i *Interpreter) execute(s stmt.Stmt) error {
 	return s.Accept(i)
+}
+
+func (i *Interpreter) executeBlock(b stmt.BlockStmt, e Environment) error {
+	orig_env := i.env
+	var errs []error
+	i.env = e
+	for _, s := range b.Statements {
+		errs = append(errs, i.execute(s))
+	}
+	i.env = orig_env
+
+	return errors.Join(errs...)
 }
 
 func (i *Interpreter) evaluate(e expr.Expr) (any, error) {
@@ -217,6 +230,10 @@ func (i *Interpreter) VisitVarStmt(s stmt.VarStmt) error {
 	i.env.define(s.Name.Lexeme, val)
 
 	return nil
+}
+
+func (i *Interpreter) VisitBlockStmt(s stmt.BlockStmt) error {
+	return i.executeBlock(s, NewEnvironment(&i.env))
 }
 
 func isEqual(a any, b any) bool {

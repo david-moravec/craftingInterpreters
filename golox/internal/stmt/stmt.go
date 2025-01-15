@@ -1,6 +1,8 @@
 package stmt
 
 import (
+	"errors"
+
 	"github.com/david-moravec/golox/internal/expr"
 	"github.com/david-moravec/golox/internal/scanner"
 )
@@ -34,8 +36,29 @@ func (s VarStmt) Accept(v StmtVisitor) error {
 	return v.VisitVarStmt(s)
 }
 
+type BlockStmt struct {
+	Statements []Stmt
+}
+
+func (s BlockStmt) Accept(v StmtVisitor) error {
+	return v.VisitBlockStmt(s)
+}
+
 type StmtVisitor interface {
 	VisitPrintStmt(PrintStmt) error
 	VisitExpressionStmt(ExpressionStmt) error
 	VisitVarStmt(VarStmt) error
+	VisitBlockStmt(BlockStmt) error
+}
+
+func DefaultVisitBlockStmt(s BlockStmt, v StmtVisitor) error {
+	var errs []error
+	for _, st := range s.Statements {
+		err := st.Accept(v)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return errors.Join(errs...)
 }

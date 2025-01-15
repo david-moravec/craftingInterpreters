@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/david-moravec/golox/internal/expr"
@@ -67,6 +68,10 @@ func (p *Parser) statement() (stmt.Stmt, error) {
 		return p.printStatement()
 	}
 
+	if p.match(scanner.LeftBrace) {
+		return p.blockStatement()
+	}
+
 	return p.expressionStatement()
 }
 
@@ -85,6 +90,22 @@ func (p *Parser) printStatement() (stmt.PrintStmt, error) {
 		return stmt.PrintStmt{Expression: expr}, err
 	}
 	return stmt.PrintStmt{Expression: expr}, p.consume_semicolon()
+}
+
+func (p *Parser) blockStatement() (stmt.BlockStmt, error) {
+	var stmts []stmt.Stmt
+	var errs []error
+	for {
+		if p.checkCurrentKind(scanner.RightBrace) || p.isAtEnd() {
+			break
+		}
+		s, err := p.declaration()
+		errs = append(errs, err)
+		stmts = append(stmts, s)
+	}
+	_, err := p.consume(scanner.RightBrace, "Expect '}' after block.")
+	errs = append(errs, err)
+	return stmt.BlockStmt{Statements: stmts}, errors.Join(errs...)
 }
 
 func (p *Parser) varDeclaration() (stmt.VarStmt, error) {
@@ -309,6 +330,7 @@ func (p *Parser) primary() (expr.Expr, error) {
 func (p *Parser) consume(k scanner.TokenKind, message string) (*scanner.Token, error) {
 	if p.checkCurrentKind(k) {
 		return p.advance(), nil
+
 	}
 
 	return nil, newParseError(p.peek(), message)
