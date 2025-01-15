@@ -51,10 +51,10 @@ func (i *Interpreter) execute(s stmt.Stmt) error {
 	return s.Accept(i)
 }
 
-func (i *Interpreter) executeBlock(b stmt.BlockStmt, e Environment) error {
+func (i *Interpreter) executeBlock(b stmt.BlockStmt) error {
 	orig_env := i.env
 	var errs []error
-	i.env = e
+	i.env = NewEnvironment(&orig_env)
 	for _, s := range b.Statements {
 		errs = append(errs, i.execute(s))
 	}
@@ -233,7 +233,7 @@ func (i *Interpreter) VisitVarStmt(s stmt.VarStmt) error {
 }
 
 func (i *Interpreter) VisitBlockStmt(s stmt.BlockStmt) error {
-	return i.executeBlock(s, NewEnvironment(&i.env))
+	return i.executeBlock(s)
 }
 
 func isEqual(a any, b any) bool {
