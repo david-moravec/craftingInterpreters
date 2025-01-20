@@ -64,6 +64,9 @@ func (p *Parser) declaration() (stmt.Stmt, error) {
 }
 
 func (p *Parser) statement() (stmt.Stmt, error) {
+	if p.match(scanner.While) {
+		return p.whileStatement()
+	}
 	if p.match(scanner.If) {
 		return p.ifStatement()
 	}
@@ -74,6 +77,18 @@ func (p *Parser) statement() (stmt.Stmt, error) {
 		return p.blockStatement()
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) whileStatement() (stmt.WhileStmt, error) {
+	var errs []error
+	_, err := p.consume(scanner.LeftParenthesis, "Expect '(' after 'if'.")
+	errs = append(errs, err)
+	condition, err := p.expression()
+	_, err = p.consume(scanner.RightParenthesis, "Expect ')' after 'if'.")
+	errs = append(errs, err)
+	body, err := p.statement()
+	errs = append(errs, err)
+	return stmt.WhileStmt{Condition: condition, Body: body}, err
 }
 
 func (p *Parser) ifStatement() (stmt.IfStmt, error) {

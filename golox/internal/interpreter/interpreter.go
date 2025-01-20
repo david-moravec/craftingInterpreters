@@ -262,6 +262,25 @@ func (i *Interpreter) VisitVarStmt(s stmt.VarStmt) error {
 	return nil
 }
 
+func (i *Interpreter) VisitWhileStmt(s stmt.WhileStmt) error {
+	for {
+		val, err := i.evaluate(s.Condition)
+		if err != nil {
+			return err
+		}
+		if !isTruthy(val) {
+			break
+		} else {
+			err = i.execute(s.Body)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func (i *Interpreter) VisitBlockStmt(s stmt.BlockStmt) error {
 	return i.executeBlock(s)
 }

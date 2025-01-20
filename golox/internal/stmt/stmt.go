@@ -54,12 +54,22 @@ func (s IfStmt) Accept(v StmtVisitor) error {
 	return v.VisitIfStmt(s)
 }
 
+type WhileStmt struct {
+	Condition expr.Expr
+	Body      Stmt
+}
+
+func (s WhileStmt) Accept(v StmtVisitor) error {
+	return v.VisitWhileStmt(s)
+}
+
 type StmtVisitor interface {
 	VisitPrintStmt(PrintStmt) error
 	VisitExpressionStmt(ExpressionStmt) error
 	VisitVarStmt(VarStmt) error
 	VisitBlockStmt(BlockStmt) error
 	VisitIfStmt(IfStmt) error
+	VisitWhileStmt(WhileStmt) error
 }
 
 func DefaultVisitBlockStmt(s BlockStmt, v StmtVisitor) error {
