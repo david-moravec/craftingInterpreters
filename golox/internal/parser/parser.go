@@ -64,6 +64,9 @@ func (p *Parser) declaration() (stmt.Stmt, error) {
 }
 
 func (p *Parser) statement() (stmt.Stmt, error) {
+	if p.match(scanner.For) {
+		return p.forStatement()
+	}
 	if p.match(scanner.While) {
 		return p.whileStatement()
 	}
@@ -77,6 +80,57 @@ func (p *Parser) statement() (stmt.Stmt, error) {
 		return p.blockStatement()
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) forStatement() (stmt.Stmt, error) {
+	var errs []error
+	_, err := p.consume(scanner.LeftParenthesis, "Expect '(' after 'if'.")
+	errs = append(errs, err)
+
+	var init stmt.Stmt = nil
+	if p.match(scanner.Semicolon) {
+		init = nil
+	} else if p.match(scanner.Var) {
+		i, err := p.varDeclaration()
+		if err != nil {
+			errs = append(errs, err)
+		}
+		init = &i
+	} else {
+		i, err := p.expressionStatement()
+		if err != nil {
+			errs = append(errs, err)
+		}
+		init = &i
+	}
+	var condition expr.Expr = nil
+	if !p.checkCurrentKind(scanner.Semicolon) {
+		condition, err = p.expression()
+		errs = append(errs, err)
+	}
+	err = p.consume_semicolon()
+	errs = append(errs, err)
+	var incr expr.Expr = nil
+	if !p.checkCurrentKind(scanner.Semicolon) {
+		incr, err = p.expression()
+		errs = append(errs, err)
+	}
+	_, err = p.consume(scanner.RightParenthesis, "Expect ')' after for clauses.")
+	errs = append(errs, err)
+	body, err := p.statement()
+	errs = append(errs, err)
+	if incr != nil {
+		var stmts = []stmt.Stmt{body, stmt.ExpressionStmt{Expression: incr}}
+		body = stmt.BlockStmt{Statements: stmts}
+	}
+	if condition == nil {
+		condition = expr.NewLiteral(expr.BoolType, 1, "")
+	}
+	body = stmt.WhileStmt{Condition: condition, Body: body}
+	if init != nil {
+		body = stmt.BlockStmt{Statements: []stmt.Stmt{init, body}}
+	}
+	return body, errors.Join(errs...)
 }
 
 func (p *Parser) whileStatement() (stmt.WhileStmt, error) {
