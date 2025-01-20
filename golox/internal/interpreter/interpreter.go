@@ -251,10 +251,15 @@ func (i Interpreter) VisitPrintStmt(s stmt.PrintStmt) error {
 }
 
 func (i *Interpreter) VisitVarStmt(s stmt.VarStmt) error {
-	val, err := i.evaluate(*s.Initializer)
+	var val any
+	var err error
 
-	if err != nil {
-		return err
+	if s.Initializer != nil {
+		val, err = i.evaluate(*s.Initializer)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	i.env.define(s.Name.Lexeme, val)
