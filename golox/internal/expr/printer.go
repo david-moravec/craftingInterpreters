@@ -43,6 +43,10 @@ func (p AstPrinter) VisitGroupingExpr(e GroupingExpr) (any, error) {
 	return p.parenthesize("group", []Expr{e.Expression}), nil
 }
 
+func (p AstPrinter) VisitLogicalExpr(e LogicalExpr) (any, error) {
+	return e.Operator.String(), nil
+}
+
 func (p AstPrinter) VisitVariableExpr(e VariableExpr) (any, error) {
 	return e.Name.String(), nil
 }

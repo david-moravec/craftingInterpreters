@@ -64,15 +64,34 @@ func (p *Parser) declaration() (stmt.Stmt, error) {
 }
 
 func (p *Parser) statement() (stmt.Stmt, error) {
+	if p.match(scanner.If) {
+		return p.ifStatement()
+	}
 	if p.match(scanner.Print) {
 		return p.printStatement()
 	}
-
 	if p.match(scanner.LeftBrace) {
 		return p.blockStatement()
 	}
-
 	return p.expressionStatement()
+}
+
+func (p *Parser) ifStatement() (stmt.IfStmt, error) {
+	var errs []error
+	_, err := p.consume(scanner.LeftParenthesis, "Expect '(' after 'if'.")
+	errs = append(errs, err)
+	condition, err := p.expression()
+	_, err = p.consume(scanner.RightParenthesis, "Expect ')' after 'if'.")
+	errs = append(errs, err)
+	than, err := p.statement()
+	errs = append(errs, err)
+	var elsebr *stmt.Stmt = nil
+	if p.match(scanner.Else) {
+		elseb, err := p.statement()
+		errs = append(errs, err)
+		elsebr = &elseb
+	}
+	return stmt.IfStmt{Condition: condition, ThenBranch: than, ElseBranch: elsebr}, errors.Join(errs...)
 }
 
 func (p *Parser) expressionStatement() (stmt.ExpressionStmt, error) {
@@ -150,7 +169,7 @@ func (p *Parser) expression() (expr.Expr, error) {
 }
 
 func (p *Parser) assignment() (expr.Expr, error) {
-	e, err := p.equality()
+	e, err := p.or()
 	if err != nil {
 		return e, err
 	}
@@ -172,6 +191,32 @@ func (p *Parser) assignment() (expr.Expr, error) {
 	}
 
 	return e, nil
+}
+
+func (p *Parser) or() (expr.Expr, error) {
+	e, err := p.and()
+	for {
+		if !p.match(scanner.Or) {
+			break
+		}
+		op := p.previous()
+		r, err := p.and()
+		return expr.LogicalExpr{Right: r, Operator: *op, Left: e}, err
+	}
+	return e, err
+}
+
+func (p *Parser) and() (expr.Expr, error) {
+	e, err := p.equality()
+	for {
+		if !p.match(scanner.And) {
+			break
+		}
+		op := p.previous()
+		r, err := p.equality()
+		return expr.LogicalExpr{Right: r, Operator: *op, Left: e}, err
+	}
+	return e, err
 }
 
 func (p *Parser) equality() (expr.Expr, error) {

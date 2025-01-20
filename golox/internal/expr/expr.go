@@ -101,6 +101,16 @@ func (e AssignExpr) Accept(v ExprVisitor) (any, error) {
 	return v.VisitAssignExpr(e)
 }
 
+type LogicalExpr struct {
+	Left     Expr
+	Operator scanner.Token
+	Right    Expr
+}
+
+func (e LogicalExpr) Accept(v ExprVisitor) (any, error) {
+	return v.VisitLogicalExpr(e)
+}
+
 type ExprVisitor interface {
 	VisitUnaryExpr(e UnaryExpr) (any, error)
 	VisitBinaryExpr(e BinaryExpr) (any, error)
@@ -108,4 +118,5 @@ type ExprVisitor interface {
 	VisitGroupingExpr(e GroupingExpr) (any, error)
 	VisitVariableExpr(e VariableExpr) (any, error)
 	VisitAssignExpr(e AssignExpr) (any, error)
+	VisitLogicalExpr(e LogicalExpr) (any, error)
 }

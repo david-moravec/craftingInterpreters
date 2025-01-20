@@ -68,6 +68,21 @@ func (i *Interpreter) evaluate(e expr.Expr) (any, error) {
 
 }
 
+func (i Interpreter) VisitLogicalExpr(e expr.LogicalExpr) (any, error) {
+	l, err := i.evaluate(e.Left)
+
+	if e.Operator.Kind == scanner.Or {
+		if isTruthy(l) {
+			return l, err
+		}
+	} else {
+		if !isTruthy(l) {
+			return l, err
+		}
+	}
+	return i.evaluate(e.Right)
+}
+
 func (i Interpreter) VisitGroupingExpr(e expr.GroupingExpr) (any, error) {
 	return i.evaluate(e.Expression)
 }
@@ -206,6 +221,21 @@ func (i Interpreter) VisitExpressionStmt(s stmt.ExpressionStmt) error {
 	_, err := i.evaluate(s.Expression)
 
 	return err
+}
+
+func (i Interpreter) VisitIfStmt(s stmt.IfStmt) error {
+	var errs []error
+	val, err := i.evaluate(s.Condition)
+	errs = append(errs, err)
+	if isTruthy(val) {
+		err = i.execute(s.ThenBranch)
+		errs = append(errs, err)
+	} else if s.ElseBranch != nil {
+		err = i.execute(*s.ElseBranch)
+		errs = append(errs, err)
+	}
+
+	return errors.Join(errs...)
 }
 
 func (i Interpreter) VisitPrintStmt(s stmt.PrintStmt) error {

@@ -44,11 +44,22 @@ func (s BlockStmt) Accept(v StmtVisitor) error {
 	return v.VisitBlockStmt(s)
 }
 
+type IfStmt struct {
+	Condition  expr.Expr
+	ThenBranch Stmt
+	ElseBranch *Stmt
+}
+
+func (s IfStmt) Accept(v StmtVisitor) error {
+	return v.VisitIfStmt(s)
+}
+
 type StmtVisitor interface {
 	VisitPrintStmt(PrintStmt) error
 	VisitExpressionStmt(ExpressionStmt) error
 	VisitVarStmt(VarStmt) error
 	VisitBlockStmt(BlockStmt) error
+	VisitIfStmt(IfStmt) error
 }
 
 func DefaultVisitBlockStmt(s BlockStmt, v StmtVisitor) error {
