@@ -18,6 +18,15 @@ func (e interpreterError) Error() string {
 	return "Interpreter error"
 }
 
+type runtimeError struct {
+	t       scanner.Token
+	message string
+}
+
+func (e runtimeError) Error() string {
+	return fmt.Sprintf("[Line: %d]: %s", e.t.Line, e.message)
+}
+
 type unknownTypeError struct {
 }
 
@@ -26,11 +35,14 @@ func (e unknownTypeError) Error() string {
 }
 
 type Interpreter struct {
-	env Environment
+	env     Environment
+	globals Environment
 }
 
 func NewInterpreter() Interpreter {
-	return Interpreter{env: NewGlobalEnvironment()}
+	env := NewGlobalEnvironment()
+	env.define("clock", clock{})
+	return Interpreter{env: env, globals: env}
 }
 
 func (i *Interpreter) Interpret(stmts []stmt.Stmt) []error {
@@ -51,10 +63,10 @@ func (i *Interpreter) execute(s stmt.Stmt) error {
 	return s.Accept(i)
 }
 
-func (i *Interpreter) executeBlock(b stmt.BlockStmt) error {
+func (i *Interpreter) executeBlock(b stmt.BlockStmt, env Environment) error {
 	orig_env := i.env
 	var errs []error
-	i.env = NewEnvironment(&orig_env)
+	i.env = env
 	for _, s := range b.Statements {
 		errs = append(errs, i.execute(s))
 	}
@@ -65,7 +77,6 @@ func (i *Interpreter) executeBlock(b stmt.BlockStmt) error {
 
 func (i *Interpreter) evaluate(e expr.Expr) (any, error) {
 	return e.Accept(i)
-
 }
 
 func (i Interpreter) VisitLogicalExpr(e expr.LogicalExpr) (any, error) {
@@ -85,6 +96,36 @@ func (i Interpreter) VisitLogicalExpr(e expr.LogicalExpr) (any, error) {
 
 func (i Interpreter) VisitGroupingExpr(e expr.GroupingExpr) (any, error) {
 	return i.evaluate(e.Expression)
+}
+
+func (i Interpreter) VisitCallExpr(e expr.CallExpr) (any, error) {
+	function, err := i.evaluate(e.Callee)
+	if err != nil {
+		return nil, err
+	}
+	var args []any
+	for _, arg := range e.Arguments {
+		a, err := i.evaluate(arg)
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, a)
+	}
+	switch function.(type) {
+	case LoxCallable:
+		function := function.(LoxCallable)
+		if len(args) != function.Arity() {
+			return nil, runtimeError{t: e.Paren,
+				message: fmt.Sprintf(
+					"Expected %d arguments but got %d.", function.Arity(), len(args),
+				),
+			}
+
+		}
+
+		return function.Call(i, args)
+	}
+	return nil, runtimeError{t: e.Paren, message: "Can call only functions and classes."}
 }
 
 func (i Interpreter) VisitLiteralExpr(e expr.LiteralExpr) (any, error) {
@@ -267,6 +308,12 @@ func (i *Interpreter) VisitVarStmt(s stmt.VarStmt) error {
 	return nil
 }
 
+func (i *Interpreter) VisitFunctionStmt(s stmt.FunctionStmt) error {
+	fun := LoxFunction{declaration: s}
+	i.env.define(s.Name.Lexeme, fun)
+	return nil
+}
+
 func (i *Interpreter) VisitWhileStmt(s stmt.WhileStmt) error {
 	for {
 		val, err := i.evaluate(s.Condition)
@@ -287,7 +334,8 @@ func (i *Interpreter) VisitWhileStmt(s stmt.WhileStmt) error {
 }
 
 func (i *Interpreter) VisitBlockStmt(s stmt.BlockStmt) error {
-	return i.executeBlock(s)
+	enclosing := i.env
+	return i.executeBlock(s, NewEnvironment(&enclosing))
 }
 
 func isEqual(a any, b any) bool {

@@ -63,6 +63,16 @@ func (s WhileStmt) Accept(v StmtVisitor) error {
 	return v.VisitWhileStmt(s)
 }
 
+type FunctionStmt struct {
+	Name   scanner.Token
+	Params []scanner.Token
+	Body   BlockStmt
+}
+
+func (s FunctionStmt) Accept(v StmtVisitor) error {
+	return v.VisitFunctionStmt(s)
+}
+
 type StmtVisitor interface {
 	VisitPrintStmt(PrintStmt) error
 	VisitExpressionStmt(ExpressionStmt) error
@@ -70,6 +80,7 @@ type StmtVisitor interface {
 	VisitBlockStmt(BlockStmt) error
 	VisitIfStmt(IfStmt) error
 	VisitWhileStmt(WhileStmt) error
+	VisitFunctionStmt(FunctionStmt) error
 }
 
 func DefaultVisitBlockStmt(s BlockStmt, v StmtVisitor) error {

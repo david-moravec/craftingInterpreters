@@ -29,7 +29,7 @@ func (e Environment) get(name scanner.Token) (any, error) {
 		if e.enclosing != nil {
 			return e.enclosing.get(name)
 		}
-		return nil, errors.New(fmt.Sprintf("Undefined variable '%s'", name.Lexeme))
+		return nil, errors.New(fmt.Sprintf("[Line %d] Undefined variable '%s'", name.Line, name.Lexeme))
 	}
 	return val, nil
 }
@@ -40,7 +40,7 @@ func (e *Environment) assign(name scanner.Token, value any) error {
 		if e.enclosing != nil {
 			return e.enclosing.assign(name, value)
 		}
-		return errors.New(fmt.Sprintf("Undefined variable '%s'", name.Lexeme))
+		return errors.New(fmt.Sprintf("[Line %d] Undefined variable '%s'", name.Line, name.Lexeme))
 	}
 	e.values[name.Lexeme] = value
 	return nil

@@ -111,6 +111,16 @@ func (e LogicalExpr) Accept(v ExprVisitor) (any, error) {
 	return v.VisitLogicalExpr(e)
 }
 
+type CallExpr struct {
+	Callee    Expr
+	Paren     scanner.Token
+	Arguments []Expr
+}
+
+func (e CallExpr) Accept(v ExprVisitor) (any, error) {
+	return v.VisitCallExpr(e)
+}
+
 type ExprVisitor interface {
 	VisitUnaryExpr(e UnaryExpr) (any, error)
 	VisitBinaryExpr(e BinaryExpr) (any, error)
@@ -119,4 +129,5 @@ type ExprVisitor interface {
 	VisitVariableExpr(e VariableExpr) (any, error)
 	VisitAssignExpr(e AssignExpr) (any, error)
 	VisitLogicalExpr(e LogicalExpr) (any, error)
+	VisitCallExpr(e CallExpr) (any, error)
 }

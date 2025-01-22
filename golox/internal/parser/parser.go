@@ -56,11 +56,48 @@ func (p *Parser) Parse() ([]stmt.Stmt, []error) {
 }
 
 func (p *Parser) declaration() (stmt.Stmt, error) {
+	if p.match(scanner.Fun) {
+		return p.funDeclaration("function")
+	}
 	if p.match(scanner.Var) {
 		return p.varDeclaration()
 	} else {
 		return p.statement()
 	}
+}
+
+func (p *Parser) funDeclaration(k string) (stmt.Stmt, error) {
+	name, err := p.consume(scanner.Identifier, fmt.Sprintf("Expect %s name.", k))
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(scanner.LeftParenthesis, fmt.Sprintf("Expect '(' after %s name.", k))
+
+	var params []scanner.Token
+	if !p.checkCurrentKind(scanner.RightParenthesis) {
+		for {
+			if len(params) >= 255 {
+				peek := p.peek()
+				return nil, newParseError(peek, "Can't have more than 255 arguments.")
+			}
+			param, err := p.consume(scanner.Identifier, "Expected parameter name.")
+			if err != nil {
+				return nil, err
+			}
+			params = append(params, *param)
+			if !p.match(scanner.Comma) {
+				break
+			}
+		}
+	}
+
+	p.consume(scanner.RightParenthesis, "Expect ')' after parameters.")
+	p.consume(scanner.LeftBrace, fmt.Sprintf("Expect '{' after %s declaration.", k))
+	body, err := p.blockStatement()
+	if err != nil {
+		return nil, err
+	}
+	return stmt.FunctionStmt{Name: *name, Params: params, Body: body}, nil
 }
 
 func (p *Parser) statement() (stmt.Stmt, error) {
@@ -408,7 +445,46 @@ func (p *Parser) unary() (expr.Expr, error) {
 		return expr.NewUnary(expr.Operator(*op), e), nil
 	}
 
-	return p.primary()
+	return p.call()
+}
+
+func (p *Parser) call() (expr.Expr, error) {
+	e, err := p.primary()
+	if err != nil {
+		return e, err
+	}
+	for {
+		if !p.match(scanner.LeftParenthesis) {
+			break
+		}
+
+		e, err = p.finishCall(e)
+	}
+
+	return e, err
+}
+
+func (p *Parser) finishCall(e expr.Expr) (expr.Expr, error) {
+	var args []expr.Expr
+
+	if !p.checkCurrentKind(scanner.RightParenthesis) {
+		for {
+			if len(args) >= 255 {
+				peek := p.peek()
+				return e, newParseError(peek, "Can't have more than 255 arguments.")
+			}
+			arg, err := p.expression()
+			if err != nil {
+				return arg, err
+			}
+			args = append(args, arg)
+			if !p.match(scanner.Comma) {
+				break
+			}
+		}
+	}
+	paren, err := p.consume(scanner.RightParenthesis, "Expect ')' after arguments.")
+	return expr.CallExpr{Callee: e, Paren: *paren, Arguments: args}, err
 }
 
 func (p *Parser) primary() (expr.Expr, error) {
