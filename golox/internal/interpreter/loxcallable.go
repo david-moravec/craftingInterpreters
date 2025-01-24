@@ -24,6 +24,10 @@ func (l LoxFunction) Call(i Interpreter, args []any) (any, error) {
 	}
 
 	err := i.executeBlock(l.declaration.Body, env)
+	switch err.(type) {
+	case stmt.Return:
+		return err.(stmt.Return).Value, nil
+	}
 	return nil, err
 }
 

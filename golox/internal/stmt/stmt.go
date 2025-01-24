@@ -73,6 +73,23 @@ func (s FunctionStmt) Accept(v StmtVisitor) error {
 	return v.VisitFunctionStmt(s)
 }
 
+type ReturnStmt struct {
+	Keyword scanner.Token
+	Value   expr.Expr
+}
+
+func (s ReturnStmt) Accept(v StmtVisitor) error {
+	return v.VisitReturnStmt(s)
+}
+
+type Return struct {
+	Value any
+}
+
+func (r Return) Error() string {
+	return "Return"
+}
+
 type StmtVisitor interface {
 	VisitPrintStmt(PrintStmt) error
 	VisitExpressionStmt(ExpressionStmt) error
@@ -81,6 +98,7 @@ type StmtVisitor interface {
 	VisitIfStmt(IfStmt) error
 	VisitWhileStmt(WhileStmt) error
 	VisitFunctionStmt(FunctionStmt) error
+	VisitReturnStmt(ReturnStmt) error
 }
 
 func DefaultVisitBlockStmt(s BlockStmt, v StmtVisitor) error {

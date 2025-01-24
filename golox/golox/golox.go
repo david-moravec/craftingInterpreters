@@ -29,10 +29,10 @@ func run(source string, interpreter interpreter.Interpreter) error {
 		return nil
 	}
 
-	errs = interpreter.Interpret(e)
+	err := interpreter.Interpret(e)
 
-	if len(errs) != 0 {
-		fmt.Println(errs)
+	if err != nil {
+		fmt.Println(err)
 
 		return nil
 	}

@@ -72,7 +72,6 @@ func (p *Parser) funDeclaration(k string) (stmt.Stmt, error) {
 		return nil, err
 	}
 	_, err = p.consume(scanner.LeftParenthesis, fmt.Sprintf("Expect '(' after %s name.", k))
-
 	var params []scanner.Token
 	if !p.checkCurrentKind(scanner.RightParenthesis) {
 		for {
@@ -116,7 +115,23 @@ func (p *Parser) statement() (stmt.Stmt, error) {
 	if p.match(scanner.LeftBrace) {
 		return p.blockStatement()
 	}
+	if p.match(scanner.Return) {
+		return p.returnStatement()
+	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) returnStatement() (stmt.Stmt, error) {
+	keyword := p.previous()
+	val, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	err = p.consume_semicolon()
+	if err != nil {
+		return nil, err
+	}
+	return stmt.ReturnStmt{Keyword: *keyword, Value: val}, nil
 }
 
 func (p *Parser) forStatement() (stmt.Stmt, error) {

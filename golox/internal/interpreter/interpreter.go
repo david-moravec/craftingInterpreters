@@ -45,7 +45,7 @@ func NewInterpreter() Interpreter {
 	return Interpreter{env: env, globals: env}
 }
 
-func (i *Interpreter) Interpret(stmts []stmt.Stmt) []error {
+func (i *Interpreter) Interpret(stmts []stmt.Stmt) error {
 	var errs []error
 
 	for _, s := range stmts {
@@ -56,7 +56,7 @@ func (i *Interpreter) Interpret(stmts []stmt.Stmt) []error {
 		}
 	}
 
-	return errs
+	return errors.Join(errs...)
 }
 
 func (i *Interpreter) execute(s stmt.Stmt) error {
@@ -65,14 +65,15 @@ func (i *Interpreter) execute(s stmt.Stmt) error {
 
 func (i *Interpreter) executeBlock(b stmt.BlockStmt, env Environment) error {
 	orig_env := i.env
-	var errs []error
 	i.env = env
 	for _, s := range b.Statements {
-		errs = append(errs, i.execute(s))
+		err := i.execute(s)
+		if err != nil {
+			return err
+		}
 	}
 	i.env = orig_env
-
-	return errors.Join(errs...)
+	return nil
 }
 
 func (i *Interpreter) evaluate(e expr.Expr) (any, error) {
@@ -208,7 +209,7 @@ func (i Interpreter) VisitBinaryExpr(e expr.BinaryExpr) (any, error) {
 		if err = checkOperandsNumber(scanner.Token(e.Operator), l, r); err != nil {
 			return nil, err
 		}
-		result = l.(float64) >= r.(float64)
+		result = l.(float64) <= r.(float64)
 	case scanner.BangEqual:
 		if err = checkOperandsNumber(scanner.Token(e.Operator), l, r); err != nil {
 			return nil, err
@@ -265,18 +266,22 @@ func (i Interpreter) VisitExpressionStmt(s stmt.ExpressionStmt) error {
 }
 
 func (i Interpreter) VisitIfStmt(s stmt.IfStmt) error {
-	var errs []error
 	val, err := i.evaluate(s.Condition)
-	errs = append(errs, err)
+	if err != nil {
+		return err
+	}
 	if isTruthy(val) {
 		err = i.execute(s.ThenBranch)
-		errs = append(errs, err)
+		if err != nil {
+			return err
+		}
 	} else if s.ElseBranch != nil {
 		err = i.execute(*s.ElseBranch)
-		errs = append(errs, err)
+		if err != nil {
+			return err
+		}
 	}
-
-	return errors.Join(errs...)
+	return nil
 }
 
 func (i Interpreter) VisitPrintStmt(s stmt.PrintStmt) error {
@@ -312,6 +317,14 @@ func (i *Interpreter) VisitFunctionStmt(s stmt.FunctionStmt) error {
 	fun := LoxFunction{declaration: s}
 	i.env.define(s.Name.Lexeme, fun)
 	return nil
+}
+
+func (i *Interpreter) VisitReturnStmt(s stmt.ReturnStmt) error {
+	val, err := i.evaluate(s.Value)
+	if err != nil {
+		return err
+	}
+	return stmt.Return{Value: val}
 }
 
 func (i *Interpreter) VisitWhileStmt(s stmt.WhileStmt) error {
