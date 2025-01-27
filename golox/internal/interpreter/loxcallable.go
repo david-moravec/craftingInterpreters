@@ -14,10 +14,11 @@ type LoxCallable interface {
 
 type LoxFunction struct {
 	declaration stmt.FunctionStmt
+	closure     Environment
 }
 
 func (l LoxFunction) Call(i Interpreter, args []any) (any, error) {
-	env := NewEnvironment(&i.globals)
+	env := NewEnvironment(&l.closure)
 
 	for i := range l.declaration.Params {
 		env.define(l.declaration.Params[i].Lexeme, args[i])

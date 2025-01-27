@@ -314,7 +314,7 @@ func (i *Interpreter) VisitVarStmt(s stmt.VarStmt) error {
 }
 
 func (i *Interpreter) VisitFunctionStmt(s stmt.FunctionStmt) error {
-	fun := LoxFunction{declaration: s}
+	fun := LoxFunction{declaration: s, closure: i.env}
 	i.env.define(s.Name.Lexeme, fun)
 	return nil
 }
