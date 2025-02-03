@@ -9,19 +9,16 @@ import (
 	"github.com/david-moravec/golox/internal/stmt"
 )
 
-type interpreterError struct {
+type GoloxError struct {
 	t       scanner.Token
 	message string
 }
 
-func (e interpreterError) Error() string {
-	return "Interpreter error"
+func (e GoloxError) Error() string {
+	return fmt.Sprintf("[Line: %d]: %s", e.t.Line, e.message)
 }
 
-type runtimeError struct {
-	t       scanner.Token
-	message string
-}
+type runtimeError GoloxError
 
 func (e runtimeError) Error() string {
 	return fmt.Sprintf("[Line: %d]: %s", e.t.Line, e.message)
@@ -37,6 +34,7 @@ func (e unknownTypeError) Error() string {
 type Interpreter struct {
 	env     Environment
 	globals Environment
+	locals  map[expr.Expr]int
 }
 
 func NewInterpreter() Interpreter {
@@ -61,6 +59,15 @@ func (i *Interpreter) Interpret(stmts []stmt.Stmt) error {
 
 func (i *Interpreter) execute(s stmt.Stmt) error {
 	return s.Accept(i)
+}
+
+func (i *Interpreter) resolve(e expr.Expr, depth int) {
+	i.locals[e] = depth
+}
+
+func (i Interpreter) lookUpVariable(e expr.Expr, name scanner.Token) (any, error) {
+	// TODO: imlement
+	return nil, nil
 }
 
 func (i *Interpreter) executeBlock(b stmt.BlockStmt, env Environment) error {
@@ -246,7 +253,7 @@ func (i Interpreter) VisitUnaryExpr(e expr.UnaryExpr) (any, error) {
 }
 
 func (i Interpreter) VisitVariableExpr(e expr.VariableExpr) (any, error) {
-	return i.env.get(e.Name)
+	return i.lookUpVar(e.Name, e)
 }
 
 func (i *Interpreter) VisitAssignExpr(e expr.AssignExpr) (any, error) {
