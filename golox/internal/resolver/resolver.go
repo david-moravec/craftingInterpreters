@@ -81,7 +81,7 @@ func (r *Resolver) VisitVarStmt(s stmt.VarStmt) error {
 
 func (r *Resolver) VisitBlockStmt(s stmt.BlockStmt) error {
 	r.beginScope()
-	err := r.resolveStmtMany(s.Statements)
+	err := r.Resolve(s.Statements)
 	if err != nil {
 		return err
 	}
@@ -229,7 +229,7 @@ func (r *Resolver) resolveLocal(e expr.Expr, name scanner.Token) error {
 	for i := len(r.scopes) - 1; i >= 0; i = i - 1 {
 		_, ok := r.scopes[i][name.Lexeme]
 		if ok {
-			r.interpreter.resolve(name, len(r.scopes)-1-i)
+			r.interpreter.Resolve(e, len(r.scopes)-1-i)
 		}
 	}
 
@@ -244,7 +244,7 @@ func (r *Resolver) resolveStmt(s stmt.Stmt) error {
 	return s.Accept(r)
 }
 
-func (r *Resolver) resolveStmtMany(stmts []stmt.Stmt) error {
+func (r *Resolver) Resolve(stmts []stmt.Stmt) error {
 	for _, s := range stmts {
 		err := r.resolveStmt(s)
 		if err != nil {
@@ -261,6 +261,10 @@ func (r *Resolver) declare(n scanner.Token) error {
 		return nil
 	}
 	s, _ := r.scopes.peek()
+	_, ok := s[n.Lexeme]
+	if ok {
+		return resolverError{t: n, message: "Already a variable with this name in scope"}
+	}
 	s[n.Lexeme] = false
 	return nil
 }

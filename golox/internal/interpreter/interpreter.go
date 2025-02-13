@@ -40,7 +40,7 @@ type Interpreter struct {
 func NewInterpreter() Interpreter {
 	env := NewGlobalEnvironment()
 	env.define("clock", clock{})
-	return Interpreter{env: env, globals: env}
+	return Interpreter{env: env, globals: env, locals: make(map[expr.Expr]int)}
 }
 
 func (i *Interpreter) Interpret(stmts []stmt.Stmt) error {
@@ -61,13 +61,17 @@ func (i *Interpreter) execute(s stmt.Stmt) error {
 	return s.Accept(i)
 }
 
-func (i *Interpreter) resolve(e expr.Expr, depth int) {
+func (i *Interpreter) Resolve(e expr.Expr, depth int) {
 	i.locals[e] = depth
 }
 
-func (i Interpreter) lookUpVariable(e expr.Expr, name scanner.Token) (any, error) {
-	// TODO: imlement
-	return nil, nil
+func (i Interpreter) lookUpVar(e expr.Expr, name scanner.Token) (any, error) {
+	dist, ok := i.locals[e]
+	if ok {
+		return i.env.getAt(dist, name)
+	} else {
+		return i.globals.get(name)
+	}
 }
 
 func (i *Interpreter) executeBlock(b stmt.BlockStmt, env Environment) error {
@@ -184,7 +188,7 @@ func (i Interpreter) VisitBinaryExpr(e expr.BinaryExpr) (any, error) {
 				result = l.(string) + r.(string)
 			}
 		default:
-			return nil, interpreterError{scanner.Token(e.Operator), "Operands must be numbers or strings"}
+			return nil, runtimeError{scanner.Token(e.Operator), "Operands must be numbers or strings"}
 		}
 
 	case scanner.Slash:
@@ -253,7 +257,7 @@ func (i Interpreter) VisitUnaryExpr(e expr.UnaryExpr) (any, error) {
 }
 
 func (i Interpreter) VisitVariableExpr(e expr.VariableExpr) (any, error) {
-	return i.lookUpVar(e.Name, e)
+	return i.lookUpVar(e, e.Name)
 }
 
 func (i *Interpreter) VisitAssignExpr(e expr.AssignExpr) (any, error) {
@@ -262,7 +266,12 @@ func (i *Interpreter) VisitAssignExpr(e expr.AssignExpr) (any, error) {
 	if err != nil {
 		return val, err
 	}
-	err = i.env.assign(e.Name, val)
+	dist, ok := i.locals[e]
+	if ok {
+		err = i.env.assignAt(dist, e.Name, val)
+	} else {
+		err = i.globals.assign(e.Name, val)
+	}
 	return val, err
 }
 
@@ -383,7 +392,7 @@ func checkOperandNumber(o scanner.Token, r any) error {
 		return nil
 	}
 
-	return interpreterError{o, "Operand must be number"}
+	return runtimeError{o, "Operand must be number"}
 }
 
 func checkOperandsNumber(o scanner.Token, l any, r any) error {
@@ -395,7 +404,7 @@ func checkOperandsNumber(o scanner.Token, l any, r any) error {
 		}
 	}
 
-	return interpreterError{o, "Operands must be numbers"}
+	return runtimeError{o, "Operands must be numbers"}
 }
 
 func stringify(a any) string {

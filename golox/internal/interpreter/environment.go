@@ -1,10 +1,22 @@
 package interpreter
 
 import (
-	"errors"
 	"fmt"
 	"github.com/david-moravec/golox/internal/scanner"
 )
+
+type environmentError struct {
+	name    scanner.Token
+	message string
+}
+
+func (e environmentError) Error() string {
+	return fmt.Sprintf("[Line %d] %s '%s'", e.name.Line, e.message, e.name.Lexeme)
+}
+
+func undefinedError(name scanner.Token) environmentError {
+	return environmentError{message: "Undefined variable", name: name}
+}
 
 type Environment struct {
 	values    map[string]any
@@ -29,9 +41,25 @@ func (e Environment) get(name scanner.Token) (any, error) {
 		if e.enclosing != nil {
 			return e.enclosing.get(name)
 		}
-		return nil, errors.New(fmt.Sprintf("[Line %d] Undefined variable '%s'", name.Line, name.Lexeme))
+		return nil, undefinedError(name)
 	}
 	return val, nil
+}
+
+func (e Environment) getAt(dist int, name scanner.Token) (any, error) {
+	return e.ancestor(dist).get(name)
+}
+
+func (e Environment) ancestor(dist int) *Environment {
+	env := &e
+	for range dist {
+		env = env.enclosing
+	}
+	return env
+}
+
+func (e *Environment) assignAt(dist int, name scanner.Token, value any) error {
+	return e.ancestor(dist).assign(name, value)
 }
 
 func (e *Environment) assign(name scanner.Token, value any) error {
@@ -40,7 +68,7 @@ func (e *Environment) assign(name scanner.Token, value any) error {
 		if e.enclosing != nil {
 			return e.enclosing.assign(name, value)
 		}
-		return errors.New(fmt.Sprintf("[Line %d] Undefined variable '%s'", name.Line, name.Lexeme))
+		return undefinedError(name)
 	}
 	e.values[name.Lexeme] = value
 	return nil

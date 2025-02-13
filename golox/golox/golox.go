@@ -7,6 +7,7 @@ import (
 
 	"github.com/david-moravec/golox/internal/interpreter"
 	"github.com/david-moravec/golox/internal/parser"
+	"github.com/david-moravec/golox/internal/resolver"
 	"github.com/david-moravec/golox/internal/scanner"
 )
 
@@ -21,7 +22,7 @@ func run(source string, interpreter interpreter.Interpreter) error {
 	}
 
 	p := parser.NewParser(tokens)
-	e, errs := p.Parse()
+	stmts, errs := p.Parse()
 
 	if len(errs) != 0 {
 		fmt.Println(errs)
@@ -29,7 +30,15 @@ func run(source string, interpreter interpreter.Interpreter) error {
 		return nil
 	}
 
-	err := interpreter.Interpret(e)
+	res := resolver.NewResolver(interpreter)
+	err := res.Resolve(stmts)
+	if err != nil {
+		fmt.Println(err)
+
+		return nil
+	}
+
+	err = interpreter.Interpret(stmts)
 
 	if err != nil {
 		fmt.Println(err)
