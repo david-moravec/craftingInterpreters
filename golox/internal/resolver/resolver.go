@@ -9,6 +9,13 @@ import (
 	"github.com/david-moravec/golox/internal/stmt"
 )
 
+type functionType int
+
+const (
+	NONE functionType = iota
+	FUNCTION
+)
+
 type scope map[string]bool
 
 type scopeStack []scope
@@ -48,12 +55,13 @@ func (e resolverError) Error() string {
 }
 
 type Resolver struct {
-	interpreter interpreter.Interpreter
-	scopes      scopeStack
+	interpreter   interpreter.Interpreter
+	scopes        scopeStack
+	currentFuncTy functionType
 }
 
 func NewResolver(i interpreter.Interpreter) Resolver {
-	return Resolver{interpreter: i}
+	return Resolver{interpreter: i, currentFuncTy: NONE}
 }
 
 func (r *Resolver) VisitPrintStmt(s stmt.PrintStmt) error {
@@ -129,10 +137,13 @@ func (r *Resolver) VisitFunctionStmt(s stmt.FunctionStmt) error {
 	if err != nil {
 		return err
 	}
-	return r.resolveFunction(s)
+	return r.resolveFunction(s, FUNCTION)
 }
 
 func (r *Resolver) VisitReturnStmt(s stmt.ReturnStmt) error {
+	if r.currentFuncTy == NONE {
+		return resolverError{t: s.Keyword, message: "Can't return from top-level code."}
+	}
 	var err error = nil
 	if s.Value != nil {
 		_, err = r.resolveExpr(s.Value)
@@ -206,7 +217,9 @@ func (r *Resolver) VisitCallExpr(e expr.CallExpr) (any, error) {
 	return nil, nil
 }
 
-func (r *Resolver) resolveFunction(f stmt.FunctionStmt) error {
+func (r *Resolver) resolveFunction(f stmt.FunctionStmt, ty functionType) error {
+	enclosingTy := r.currentFuncTy
+	r.currentFuncTy = ty
 	r.beginScope()
 	for _, param := range f.Params {
 		err := r.declare(param)
@@ -223,6 +236,7 @@ func (r *Resolver) resolveFunction(f stmt.FunctionStmt) error {
 		return err
 	}
 	r.endScope()
+	r.currentFuncTy = enclosingTy
 	return nil
 }
 
