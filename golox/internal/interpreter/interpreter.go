@@ -34,13 +34,13 @@ func (e unknownTypeError) Error() string {
 type Interpreter struct {
 	env     Environment
 	globals Environment
-	locals  map[expr.Expr]int
+	locals  map[scanner.TokenKey]int
 }
 
 func NewInterpreter() Interpreter {
 	env := NewGlobalEnvironment()
 	env.define("clock", clock{})
-	return Interpreter{env: env, globals: env, locals: make(map[expr.Expr]int)}
+	return Interpreter{env: env, globals: env, locals: make(map[scanner.TokenKey]int)}
 }
 
 func (i *Interpreter) Interpret(stmts []stmt.Stmt) error {
@@ -61,12 +61,12 @@ func (i *Interpreter) execute(s stmt.Stmt) error {
 	return s.Accept(i)
 }
 
-func (i *Interpreter) Resolve(e expr.Expr, depth int) {
-	i.locals[e] = depth
+func (i *Interpreter) Resolve(name scanner.Token, depth int) {
+	i.locals[name.Key()] = depth
 }
 
 func (i Interpreter) lookUpVar(e expr.Expr, name scanner.Token) (any, error) {
-	dist, ok := i.locals[e]
+	dist, ok := i.locals[name.Key()]
 	if ok {
 		return i.env.getAt(dist, name)
 	} else {
@@ -74,10 +74,10 @@ func (i Interpreter) lookUpVar(e expr.Expr, name scanner.Token) (any, error) {
 	}
 }
 
-func (i *Interpreter) executeBlock(b stmt.BlockStmt, env Environment) error {
+func (i *Interpreter) executeStmts(b []stmt.Stmt, env Environment) error {
 	orig_env := i.env
 	i.env = env
-	for _, s := range b.Statements {
+	for _, s := range b {
 		err := i.execute(s)
 		if err != nil {
 			return err
@@ -266,7 +266,7 @@ func (i *Interpreter) VisitAssignExpr(e expr.AssignExpr) (any, error) {
 	if err != nil {
 		return val, err
 	}
-	dist, ok := i.locals[e]
+	dist, ok := i.locals[e.Name.Key()]
 	if ok {
 		err = i.env.assignAt(dist, e.Name, val)
 	} else {
@@ -364,7 +364,7 @@ func (i *Interpreter) VisitWhileStmt(s stmt.WhileStmt) error {
 
 func (i *Interpreter) VisitBlockStmt(s stmt.BlockStmt) error {
 	enclosing := i.env
-	return i.executeBlock(s, NewEnvironment(&enclosing))
+	return i.executeStmts(s.Statements, NewEnvironment(&enclosing))
 }
 
 func isEqual(a any, b any) bool {

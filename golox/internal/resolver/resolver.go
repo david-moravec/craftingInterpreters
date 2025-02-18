@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"errors"
+	"fmt"
 	"github.com/david-moravec/golox/internal/expr"
 	"github.com/david-moravec/golox/internal/interpreter"
 	"github.com/david-moravec/golox/internal/scanner"
@@ -43,7 +44,7 @@ type resolverError struct {
 }
 
 func (e resolverError) Error() string {
-	return "Interpreter error"
+	return fmt.Sprintf("[Line: %d]: %s", e.t.Line, e.message)
 }
 
 type Resolver struct {
@@ -172,7 +173,7 @@ func (r *Resolver) VisitVariableExpr(e expr.VariableExpr) (any, error) {
 		}
 	}
 
-	return nil, r.resolveLocal(e, e.Name)
+	return nil, r.resolveLocal(e.Name)
 }
 
 func (r *Resolver) VisitAssignExpr(e expr.AssignExpr) (any, error) {
@@ -180,7 +181,7 @@ func (r *Resolver) VisitAssignExpr(e expr.AssignExpr) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	return nil, r.resolveLocal(e, e.Name)
+	return nil, r.resolveLocal(e.Name)
 }
 
 func (r *Resolver) VisitLogicalExpr(e expr.LogicalExpr) (any, error) {
@@ -217,7 +218,7 @@ func (r *Resolver) resolveFunction(f stmt.FunctionStmt) error {
 			return err
 		}
 	}
-	err := r.resolveStmt(f.Body)
+	err := r.Resolve(f.Body)
 	if err != nil {
 		return err
 	}
@@ -225,11 +226,11 @@ func (r *Resolver) resolveFunction(f stmt.FunctionStmt) error {
 	return nil
 }
 
-func (r *Resolver) resolveLocal(e expr.Expr, name scanner.Token) error {
+func (r *Resolver) resolveLocal(name scanner.Token) error {
 	for i := len(r.scopes) - 1; i >= 0; i = i - 1 {
 		_, ok := r.scopes[i][name.Lexeme]
 		if ok {
-			r.interpreter.Resolve(e, len(r.scopes)-1-i)
+			r.interpreter.Resolve(name, len(r.scopes)-1-i)
 		}
 	}
 

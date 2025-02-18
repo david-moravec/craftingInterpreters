@@ -66,7 +66,7 @@ func (s WhileStmt) Accept(v StmtVisitor) error {
 type FunctionStmt struct {
 	Name   scanner.Token
 	Params []scanner.Token
-	Body   BlockStmt
+	Body   []Stmt
 }
 
 func (s FunctionStmt) Accept(v StmtVisitor) error {

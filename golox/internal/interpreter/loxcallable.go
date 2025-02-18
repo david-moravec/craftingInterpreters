@@ -24,7 +24,7 @@ func (l LoxFunction) Call(i Interpreter, args []any) (any, error) {
 		env.define(l.declaration.Params[i].Lexeme, args[i])
 	}
 
-	err := i.executeBlock(l.declaration.Body, env)
+	err := i.executeStmts(l.declaration.Body, env)
 	switch err.(type) {
 	case stmt.Return:
 		return err.(stmt.Return).Value, nil

@@ -96,7 +96,7 @@ func (p *Parser) funDeclaration(k string) (stmt.Stmt, error) {
 	if err != nil {
 		return nil, err
 	}
-	return stmt.FunctionStmt{Name: *name, Params: params, Body: body}, nil
+	return stmt.FunctionStmt{Name: *name, Params: params, Body: body.Statements}, nil
 }
 
 func (p *Parser) statement() (stmt.Stmt, error) {

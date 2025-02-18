@@ -126,6 +126,15 @@ type Token struct {
 	Line    int
 }
 
+func (t Token) Key() TokenKey {
+	return TokenKey{Kind: int(t.Kind), Lexeme: t.Lexeme}
+}
+
+type TokenKey struct {
+	Kind   int
+	Lexeme string
+}
+
 func NewToken(k TokenKind, l string, lit string, val float64, line int) *Token {
 	return &Token{k, l, lit, val, line}
 }
