@@ -343,6 +343,13 @@ func (i *Interpreter) VisitReturnStmt(s stmt.ReturnStmt) error {
 	return stmt.Return{Value: val}
 }
 
+func (i *Interpreter) VisitClassStmt(s stmt.ClassStmt) error {
+	klass := LoxClass{Name: s.Name}
+	i.env.define(s.Name.Lexeme, klass)
+	return nil
+
+}
+
 func (i *Interpreter) VisitWhileStmt(s stmt.WhileStmt) error {
 	for {
 		val, err := i.evaluate(s.Condition)

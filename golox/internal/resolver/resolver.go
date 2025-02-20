@@ -151,6 +151,14 @@ func (r *Resolver) VisitReturnStmt(s stmt.ReturnStmt) error {
 	return err
 }
 
+func (r *Resolver) VisitClassStmt(s stmt.ClassStmt) error {
+	err := r.declare(s.Name)
+	if err != nil {
+		return err
+	}
+	return r.define(s.Name)
+}
+
 func (r *Resolver) VisitUnaryExpr(e expr.UnaryExpr) (any, error) {
 	return r.resolveExpr(e.Right)
 }

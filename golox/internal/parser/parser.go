@@ -56,6 +56,9 @@ func (p *Parser) Parse() ([]stmt.Stmt, []error) {
 }
 
 func (p *Parser) declaration() (stmt.Stmt, error) {
+	if p.match(scanner.Class) {
+		return p.classDeclaration()
+	}
 	if p.match(scanner.Fun) {
 		return p.funDeclaration("function")
 	}
@@ -64,6 +67,34 @@ func (p *Parser) declaration() (stmt.Stmt, error) {
 	} else {
 		return p.statement()
 	}
+}
+
+func (p *Parser) classDeclaration() (stmt.Stmt, error) {
+	name, err := p.consume(scanner.Identifier, "Expected identifier after 'class'")
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(scanner.LeftBrace, "Expected '{' after identifier")
+	if err != nil {
+		return nil, err
+	}
+	var methods []stmt.FunctionStmt
+	for {
+		if p.isAtEnd() || p.checkCurrentKind(scanner.RightBrace) {
+			break
+		}
+		meth, err := p.funDeclaration("method")
+		if err != nil {
+			return nil, err
+		}
+		methods = append(methods, meth.(stmt.FunctionStmt))
+	}
+	_, err = p.consume(scanner.RightBrace, "Expected '}' after method declarations")
+	if err != nil {
+		return nil, err
+	}
+
+	return stmt.ClassStmt{Name: *name, Methods: methods}, nil
 }
 
 func (p *Parser) funDeclaration(k string) (stmt.Stmt, error) {

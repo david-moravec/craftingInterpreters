@@ -90,6 +90,15 @@ func (r Return) Error() string {
 	return "Return"
 }
 
+type ClassStmt struct {
+	Name    scanner.Token
+	Methods []FunctionStmt
+}
+
+func (s ClassStmt) Accept(v StmtVisitor) error {
+	return v.VisitClassStmt(s)
+}
+
 type StmtVisitor interface {
 	VisitPrintStmt(PrintStmt) error
 	VisitExpressionStmt(ExpressionStmt) error
@@ -99,6 +108,7 @@ type StmtVisitor interface {
 	VisitWhileStmt(WhileStmt) error
 	VisitFunctionStmt(FunctionStmt) error
 	VisitReturnStmt(ReturnStmt) error
+	VisitClassStmt(ClassStmt) error
 }
 
 func DefaultVisitBlockStmt(s BlockStmt, v StmtVisitor) error {
