@@ -6,4 +6,8 @@ class DevonshireCream {
 
 var a = DevonshireCream();
 
-print a;
+a.field = "2";
+a.field = DevonshireCream();
+a.field.fi = 3;
+
+print a.field.fi;

@@ -59,6 +59,14 @@ func (p AstPrinter) VisitCallExpr(e CallExpr) (any, error) {
 	return e.Paren.Lexeme, nil
 }
 
+func (p AstPrinter) VisitSetExpr(e SetExpr) (any, error) {
+	return e.Name.Lexeme, nil
+}
+
+func (p AstPrinter) VisitGetExpr(e GetExpr) (any, error) {
+	return e.Name.Lexeme, nil
+}
+
 func (p *AstPrinter) parenthesize(name string, exprs []Expr) string {
 	s := new(bytes.Buffer)
 

@@ -225,6 +225,19 @@ func (r *Resolver) VisitCallExpr(e expr.CallExpr) (any, error) {
 	return nil, nil
 }
 
+func (r *Resolver) VisitGetExpr(e expr.GetExpr) (any, error) {
+	return r.resolveExpr(e.Obj)
+}
+
+func (r *Resolver) VisitSetExpr(e expr.SetExpr) (any, error) {
+	_, err := r.resolveExpr(e.Obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.resolveExpr(e.Val)
+}
+
 func (r *Resolver) resolveFunction(f stmt.FunctionStmt, ty functionType) error {
 	enclosingTy := r.currentFuncTy
 	r.currentFuncTy = ty

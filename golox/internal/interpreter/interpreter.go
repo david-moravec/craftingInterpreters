@@ -140,6 +140,37 @@ func (i Interpreter) VisitCallExpr(e expr.CallExpr) (any, error) {
 	return nil, runtimeError{t: e.Paren, message: "Can call only functions and classes."}
 }
 
+func (i Interpreter) VisitGetExpr(e expr.GetExpr) (any, error) {
+	obj, err := i.evaluate(e.Obj)
+	if err != nil {
+		return nil, err
+	}
+	switch obj.(type) {
+	case *LoxInstance:
+		return obj.(*LoxInstance).get(e.Name)
+	}
+
+	return nil, runtimeError{t: e.Name, message: "Can get properties only on classes."}
+}
+
+func (i Interpreter) VisitSetExpr(e expr.SetExpr) (any, error) {
+	obj, err := i.evaluate(e.Obj)
+	if err != nil {
+		return nil, err
+	}
+	switch obj.(type) {
+	case *LoxInstance:
+		val, err := i.evaluate(e.Val)
+		if err != nil {
+			return nil, err
+		}
+		return obj.(*LoxInstance).set(e.Name, val)
+	}
+
+	return nil, runtimeError{t: e.Name, message: "Can set properties only on classes."}
+
+}
+
 func (i Interpreter) VisitLiteralExpr(e expr.LiteralExpr) (any, error) {
 	switch e.LitType {
 	case expr.NumberType:

@@ -337,6 +337,9 @@ func (p *Parser) assignment() (expr.Expr, error) {
 			name := e.(expr.VariableExpr).Name
 			return expr.NewAssign(name, val), nil
 
+		case expr.GetExpr:
+			get := e.(expr.GetExpr)
+			return expr.SetExpr{Obj: get.Obj, Name: get.Name, Val: val}, nil
 		}
 
 		return val, newParseError(*eq, "Invalid assignment target.")
@@ -500,11 +503,17 @@ func (p *Parser) call() (expr.Expr, error) {
 		return e, err
 	}
 	for {
-		if !p.match(scanner.LeftParenthesis) {
+		if p.match(scanner.LeftParenthesis) {
+			e, err = p.finishCall(e)
+		} else if p.match(scanner.Dot) {
+			name, err := p.consume(scanner.Identifier, "Expect property name after '.'.")
+			if err != nil {
+				return nil, err
+			}
+			e = expr.GetExpr{Obj: e, Name: *name}
+		} else {
 			break
 		}
-
-		e, err = p.finishCall(e)
 	}
 
 	return e, err
@@ -593,9 +602,9 @@ func (p *Parser) synchronize() {
 			scanner.Class | scanner.Fun | scanner.Var | scanner.For | scanner.If | scanner.While | scanner.Print | scanner.Return:
 			return
 		}
+		p.advance()
 	}
 
-	p.advance()
 }
 
 func (p *Parser) match(kinds ...scanner.TokenKind) bool {

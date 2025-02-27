@@ -121,6 +121,25 @@ func (e CallExpr) Accept(v ExprVisitor) (any, error) {
 	return v.VisitCallExpr(e)
 }
 
+type GetExpr struct {
+	Obj  Expr
+	Name scanner.Token
+}
+
+func (e GetExpr) Accept(v ExprVisitor) (any, error) {
+	return v.VisitGetExpr(e)
+}
+
+type SetExpr struct {
+	Obj  Expr
+	Name scanner.Token
+	Val  Expr
+}
+
+func (e SetExpr) Accept(v ExprVisitor) (any, error) {
+	return v.VisitSetExpr(e)
+}
+
 type ExprVisitor interface {
 	VisitUnaryExpr(e UnaryExpr) (any, error)
 	VisitBinaryExpr(e BinaryExpr) (any, error)
@@ -130,4 +149,6 @@ type ExprVisitor interface {
 	VisitAssignExpr(e AssignExpr) (any, error)
 	VisitLogicalExpr(e LogicalExpr) (any, error)
 	VisitCallExpr(e CallExpr) (any, error)
+	VisitGetExpr(e GetExpr) (any, error)
+	VisitSetExpr(e SetExpr) (any, error)
 }
