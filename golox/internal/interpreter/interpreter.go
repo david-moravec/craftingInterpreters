@@ -171,6 +171,10 @@ func (i Interpreter) VisitSetExpr(e expr.SetExpr) (any, error) {
 
 }
 
+func (i Interpreter) VisitThisExpr(e expr.ThisExpr) (any, error) {
+	return i.lookUpVar(e, e.Keyword)
+}
+
 func (i Interpreter) VisitLiteralExpr(e expr.LiteralExpr) (any, error) {
 	switch e.LitType {
 	case expr.NumberType:
@@ -375,10 +379,15 @@ func (i *Interpreter) VisitReturnStmt(s stmt.ReturnStmt) error {
 }
 
 func (i *Interpreter) VisitClassStmt(s stmt.ClassStmt) error {
-	klass := LoxClass{Name: s.Name}
-	i.env.define(s.Name.Lexeme, klass)
-	return nil
+	i.env.define(s.Name.Lexeme, nil)
 
+	var methods map[string]LoxFunction = make(map[string]LoxFunction)
+
+	for _, s := range s.Methods {
+		methods[s.Name.Lexeme] = LoxFunction{declaration: s, closure: i.env}
+	}
+	klass := LoxClass{Name: s.Name, Methods: methods}
+	return i.env.assign(s.Name, klass)
 }
 
 func (i *Interpreter) VisitWhileStmt(s stmt.WhileStmt) error {

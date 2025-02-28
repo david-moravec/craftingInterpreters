@@ -14,6 +14,7 @@ type functionType int
 const (
 	NONE functionType = iota
 	FUNCTION
+	METHOD
 )
 
 type scope map[string]bool
@@ -156,7 +157,18 @@ func (r *Resolver) VisitClassStmt(s stmt.ClassStmt) error {
 	if err != nil {
 		return err
 	}
-	return r.define(s.Name)
+	r.define(s.Name)
+	r.beginScope()
+	sc, _ := r.scopes.peek()
+	sc["this"] = true
+
+	var errs []error
+	for _, s := range s.Methods {
+		errs = append(errs, r.resolveFunction(s, METHOD))
+	}
+
+	r.endScope()
+	return errors.Join(errs...)
 }
 
 func (r *Resolver) VisitUnaryExpr(e expr.UnaryExpr) (any, error) {
@@ -236,6 +248,10 @@ func (r *Resolver) VisitSetExpr(e expr.SetExpr) (any, error) {
 	}
 
 	return r.resolveExpr(e.Val)
+}
+
+func (r *Resolver) VisitThisExpr(e expr.ThisExpr) (any, error) {
+	return nil, r.resolveLocal(e.Keyword)
 }
 
 func (r *Resolver) resolveFunction(f stmt.FunctionStmt, ty functionType) error {

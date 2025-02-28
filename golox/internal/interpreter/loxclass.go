@@ -7,7 +7,8 @@ import (
 )
 
 type LoxClass struct {
-	Name scanner.Token
+	Name    scanner.Token
+	Methods map[string]LoxFunction
 }
 
 func (c LoxClass) String() string {
@@ -29,12 +30,14 @@ type LoxInstance struct {
 
 func (i *LoxInstance) get(name scanner.Token) (any, error) {
 	val, ok := i.fields[name.Lexeme]
-
-	if !ok {
-		return nil, runtimeError{t: name, message: fmt.Sprintf("Undefined property %s.", name.Lexeme)}
+	if ok {
+		return val, nil
 	}
-
-	return val, nil
+	meth, ok := i.class.Methods[name.Lexeme]
+	if ok {
+		return meth.bind(i), nil
+	}
+	return nil, runtimeError{t: name, message: fmt.Sprintf("Undefined property %s.", name.Lexeme)}
 }
 
 func (i *LoxInstance) set(name scanner.Token, value any) (any, error) {
