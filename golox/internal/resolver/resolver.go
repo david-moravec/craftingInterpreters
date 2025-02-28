@@ -14,6 +14,14 @@ type functionType int
 const (
 	NONE functionType = iota
 	FUNCTION
+	METHOD
+)
+
+type classType int
+
+const (
+	NONe classType = iota
+	CLASS
 )
 
 type scope map[string]bool
@@ -55,13 +63,14 @@ func (e resolverError) Error() string {
 }
 
 type Resolver struct {
-	interpreter   interpreter.Interpreter
-	scopes        scopeStack
-	currentFuncTy functionType
+	interpreter    interpreter.Interpreter
+	scopes         scopeStack
+	currentFuncTy  functionType
+	currentClassTy classType
 }
 
 func NewResolver(i interpreter.Interpreter) Resolver {
-	return Resolver{interpreter: i, currentFuncTy: NONE}
+	return Resolver{interpreter: i, currentFuncTy: NONE, currentClassTy: NONe}
 }
 
 func (r *Resolver) VisitPrintStmt(s stmt.PrintStmt) error {
@@ -152,11 +161,25 @@ func (r *Resolver) VisitReturnStmt(s stmt.ReturnStmt) error {
 }
 
 func (r *Resolver) VisitClassStmt(s stmt.ClassStmt) error {
+	orig := r.currentClassTy
+	r.currentClassTy = CLASS
 	err := r.declare(s.Name)
 	if err != nil {
 		return err
 	}
-	return r.define(s.Name)
+	r.define(s.Name)
+	r.beginScope()
+	sc, _ := r.scopes.peek()
+	sc["this"] = true
+
+	var errs []error
+	for _, s := range s.Methods {
+		errs = append(errs, r.resolveFunction(s, METHOD))
+	}
+
+	r.endScope()
+	r.currentClassTy = orig
+	return errors.Join(errs...)
 }
 
 func (r *Resolver) VisitUnaryExpr(e expr.UnaryExpr) (any, error) {
@@ -236,6 +259,13 @@ func (r *Resolver) VisitSetExpr(e expr.SetExpr) (any, error) {
 	}
 
 	return r.resolveExpr(e.Val)
+}
+
+func (r *Resolver) VisitThisExpr(e expr.ThisExpr) (any, error) {
+	if r.currentClassTy == NONe {
+		return nil, resolverError{t: e.Keyword, message: "Can't use 'this' outside of class."}
+	}
+	return nil, r.resolveLocal(e.Keyword)
 }
 
 func (r *Resolver) resolveFunction(f stmt.FunctionStmt, ty functionType) error {

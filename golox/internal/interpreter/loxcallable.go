@@ -32,6 +32,12 @@ func (l LoxFunction) Call(i Interpreter, args []any) (any, error) {
 	return nil, err
 }
 
+func (l LoxFunction) bind(i *LoxInstance) LoxFunction {
+	l.closure.define("this", i)
+
+	return LoxFunction{declaration: l.declaration, closure: l.closure}
+}
+
 func (l LoxFunction) Arity() int {
 	return len(l.declaration.Params)
 }

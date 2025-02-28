@@ -1,13 +1,12 @@
-class DevonshireCream {
-	serveOn() {
-		return "Scones";
+class Cake {
+	taste() {
+		var adjective = "delicious";
+		print "The " + this.flavor + " cake is " + adjective + "!";
 	}
 }
-
-var a = DevonshireCream();
-
-a.field = "2";
-a.field = DevonshireCream();
-a.field.fi = 3;
-
-print a.field.fi;
+	
+var cake = Cake();
+cake.flavor = "German chocolate";
+cake.taste();
+cake.flavor = "late";
+cake.taste();

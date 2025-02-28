@@ -555,6 +555,8 @@ func (p *Parser) primary() (expr.Expr, error) {
 		return expr.NewLiteral(expr.StringType, 0, p.previous().Literal), nil
 	} else if p.match(scanner.Identifier) {
 		return expr.NewVariable(*p.previous()), nil
+	} else if p.match(scanner.This) {
+		return expr.ThisExpr{*p.previous()}, nil
 	} else if p.match(scanner.LeftParenthesis) {
 		e, err := p.expression()
 		if err != nil {
@@ -568,7 +570,7 @@ func (p *Parser) primary() (expr.Expr, error) {
 
 		return expr.NewGroup(e), nil
 	} else {
-		return nil, newParseError(p.peek(), "Expect expression.")
+		return nil, newParseError(*p.advance(), "Expect expression.")
 	}
 }
 
