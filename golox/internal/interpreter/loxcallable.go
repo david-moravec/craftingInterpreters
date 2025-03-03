@@ -3,6 +3,7 @@ package interpreter
 import (
 	"fmt"
 
+	"github.com/david-moravec/golox/internal/scanner"
 	"github.com/david-moravec/golox/internal/stmt"
 )
 
@@ -15,6 +16,7 @@ type LoxCallable interface {
 type LoxFunction struct {
 	declaration stmt.FunctionStmt
 	closure     Environment
+	isInit      bool
 }
 
 func (l LoxFunction) Call(i Interpreter, args []any) (any, error) {
@@ -27,7 +29,13 @@ func (l LoxFunction) Call(i Interpreter, args []any) (any, error) {
 	err := i.executeStmts(l.declaration.Body, env)
 	switch err.(type) {
 	case stmt.Return:
+		if l.isInit {
+			return l.closure.getAt(0, *scanner.DummyThisToken(l.declaration.Name.Line))
+		}
 		return err.(stmt.Return).Value, nil
+	}
+	if l.isInit {
+		return l.closure.getAt(0, *scanner.DummyThisToken(l.declaration.Name.Line))
 	}
 	return nil, err
 }
@@ -35,7 +43,7 @@ func (l LoxFunction) Call(i Interpreter, args []any) (any, error) {
 func (l LoxFunction) bind(i *LoxInstance) LoxFunction {
 	l.closure.define("this", i)
 
-	return LoxFunction{declaration: l.declaration, closure: l.closure}
+	return LoxFunction{declaration: l.declaration, closure: l.closure, isInit: l.isInit}
 }
 
 func (l LoxFunction) Arity() int {

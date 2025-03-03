@@ -16,11 +16,20 @@ func (c LoxClass) String() string {
 }
 
 func (c LoxClass) Arity() int {
+	meth, ok := c.Methods["init"]
+	if ok {
+		return meth.Arity()
+	}
 	return 0
 }
 
 func (c LoxClass) Call(i Interpreter, args []any) (any, error) {
-	return &LoxInstance{class: c, fields: make(map[string]any)}, nil
+	meth, ok := c.Methods["init"]
+	instance := &LoxInstance{class: c, fields: make(map[string]any)}
+	if ok {
+		meth.bind(instance).Call(i, args)
+	}
+	return instance, nil
 }
 
 type LoxInstance struct {

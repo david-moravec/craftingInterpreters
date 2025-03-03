@@ -15,6 +15,7 @@ const (
 	NONE functionType = iota
 	FUNCTION
 	METHOD
+	INIT
 )
 
 type classType int
@@ -155,6 +156,9 @@ func (r *Resolver) VisitReturnStmt(s stmt.ReturnStmt) error {
 	}
 	var err error = nil
 	if s.Value != nil {
+		if r.currentFuncTy == INIT {
+			return resolverError{t: s.Keyword, message: "Can't return value from inititalizer."}
+		}
 		_, err = r.resolveExpr(s.Value)
 	}
 	return err
@@ -173,8 +177,12 @@ func (r *Resolver) VisitClassStmt(s stmt.ClassStmt) error {
 	sc["this"] = true
 
 	var errs []error
-	for _, s := range s.Methods {
-		errs = append(errs, r.resolveFunction(s, METHOD))
+	for _, meth := range s.Methods {
+		ty := METHOD
+		if meth.Name.Lexeme == "init" {
+			ty = INIT
+		}
+		errs = append(errs, r.resolveFunction(meth, ty))
 	}
 
 	r.endScope()

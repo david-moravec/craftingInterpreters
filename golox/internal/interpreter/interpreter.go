@@ -206,7 +206,8 @@ func (i Interpreter) VisitBinaryExpr(e expr.BinaryExpr) (any, error) {
 
 	switch e.Operator.Kind {
 	case scanner.Minus:
-		if err = checkOperandsNumber(scanner.Token(e.Operator), l, r); err != nil {
+		err := checkOperandsNumber(scanner.Token(e.Operator), l, r)
+		if err != nil {
 			return nil, err
 		}
 		result = l.(float64) - r.(float64)
@@ -268,7 +269,7 @@ func (i Interpreter) VisitBinaryExpr(e expr.BinaryExpr) (any, error) {
 		result = isEqual(l, r)
 	}
 
-	return result, err
+	return result, nil
 }
 
 func (i Interpreter) VisitUnaryExpr(e expr.UnaryExpr) (any, error) {
@@ -365,7 +366,7 @@ func (i *Interpreter) VisitVarStmt(s stmt.VarStmt) error {
 }
 
 func (i *Interpreter) VisitFunctionStmt(s stmt.FunctionStmt) error {
-	fun := LoxFunction{declaration: s, closure: i.env}
+	fun := LoxFunction{declaration: s, closure: i.env, isInit: false}
 	i.env.define(s.Name.Lexeme, fun)
 	return nil
 }
@@ -383,8 +384,12 @@ func (i *Interpreter) VisitClassStmt(s stmt.ClassStmt) error {
 
 	var methods map[string]LoxFunction = make(map[string]LoxFunction)
 
-	for _, s := range s.Methods {
-		methods[s.Name.Lexeme] = LoxFunction{declaration: s, closure: i.env}
+	for _, meth := range s.Methods {
+		methods[meth.Name.Lexeme] = LoxFunction{
+			declaration: meth,
+			closure:     i.env,
+			isInit:      meth.Name.Lexeme == "init",
+		}
 	}
 	klass := LoxClass{Name: s.Name, Methods: methods}
 	return i.env.assign(s.Name, klass)

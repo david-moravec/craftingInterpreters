@@ -142,3 +142,7 @@ func NewToken(k TokenKind, l string, lit string, val float64, line int) *Token {
 func (t Token) String() string {
 	return t.Kind.String()
 }
+
+func DummyThisToken(line int) *Token {
+	return &Token{Kind: This, Lexeme: "this", Literal: "", Value: 0, Line: line}
+}
