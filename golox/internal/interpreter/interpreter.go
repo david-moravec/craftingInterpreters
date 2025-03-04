@@ -384,6 +384,9 @@ func (i *Interpreter) VisitClassStmt(s stmt.ClassStmt) error {
 
 	var methods map[string]LoxFunction = make(map[string]LoxFunction)
 
+	var superclass any
+	var err error
+
 	for _, meth := range s.Methods {
 		methods[meth.Name.Lexeme] = LoxFunction{
 			declaration: meth,
@@ -391,7 +394,26 @@ func (i *Interpreter) VisitClassStmt(s stmt.ClassStmt) error {
 			isInit:      meth.Name.Lexeme == "init",
 		}
 	}
-	klass := LoxClass{Name: s.Name, Methods: methods}
+
+	var klass LoxClass
+
+	if s.Superclass != nil {
+		superclass, err = i.evaluate(s.Superclass)
+		if err != nil {
+			return err
+		}
+		switch superclass.(type) {
+		case LoxClass:
+			superclass := superclass.(LoxClass)
+			klass = LoxClass{Name: s.Name, Methods: methods, Superclass: &superclass}
+		default:
+			return runtimeError{t: s.Superclass.Name, message: "Superclass must be class."}
+		}
+	} else {
+		klass = LoxClass{Name: s.Name, Methods: methods, Superclass: nil}
+
+	}
+
 	return i.env.assign(s.Name, klass)
 }
 

@@ -74,6 +74,14 @@ func (p *Parser) classDeclaration() (stmt.Stmt, error) {
 	if err != nil {
 		return nil, err
 	}
+	var superclass *expr.VariableExpr = nil
+	if p.match(scanner.Less) {
+		super_name, err := p.consume(scanner.Identifier, "Expected identifier after '<'")
+		if err != nil {
+			return nil, err
+		}
+		superclass = &expr.VariableExpr{Name: *super_name}
+	}
 	_, err = p.consume(scanner.LeftBrace, "Expected '{' after identifier")
 	if err != nil {
 		return nil, err
@@ -94,7 +102,7 @@ func (p *Parser) classDeclaration() (stmt.Stmt, error) {
 		return nil, err
 	}
 
-	return stmt.ClassStmt{Name: *name, Methods: methods}, nil
+	return stmt.ClassStmt{Name: *name, Methods: methods, Superclass: superclass}, nil
 }
 
 func (p *Parser) funDeclaration(k string) (stmt.Stmt, error) {

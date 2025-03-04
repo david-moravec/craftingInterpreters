@@ -91,8 +91,9 @@ func (r Return) Error() string {
 }
 
 type ClassStmt struct {
-	Name    scanner.Token
-	Methods []FunctionStmt
+	Name       scanner.Token
+	Methods    []FunctionStmt
+	Superclass *expr.VariableExpr
 }
 
 func (s ClassStmt) Accept(v StmtVisitor) error {

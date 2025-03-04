@@ -172,6 +172,12 @@ func (r *Resolver) VisitClassStmt(s stmt.ClassStmt) error {
 		return err
 	}
 	r.define(s.Name)
+	if s.Superclass != nil {
+		if s.Superclass.Name.Lexeme == s.Name.Lexeme {
+			return resolverError{t: s.Superclass.Name, message: "Can't inherit from itself."}
+		}
+		r.resolveExpr(s.Superclass)
+	}
 	r.beginScope()
 	sc, _ := r.scopes.peek()
 	sc["this"] = true

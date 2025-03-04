@@ -7,8 +7,9 @@ import (
 )
 
 type LoxClass struct {
-	Name    scanner.Token
-	Methods map[string]LoxFunction
+	Name       scanner.Token
+	Methods    map[string]LoxFunction
+	Superclass *LoxClass
 }
 
 func (c LoxClass) String() string {
@@ -16,20 +17,33 @@ func (c LoxClass) String() string {
 }
 
 func (c LoxClass) Arity() int {
-	meth, ok := c.Methods["init"]
-	if ok {
+	meth := c.findMethod("init")
+	if meth != nil {
 		return meth.Arity()
 	}
 	return 0
 }
 
 func (c LoxClass) Call(i Interpreter, args []any) (any, error) {
-	meth, ok := c.Methods["init"]
+	meth := c.findMethod("init")
 	instance := &LoxInstance{class: c, fields: make(map[string]any)}
-	if ok {
+	if meth != nil {
 		meth.bind(instance).Call(i, args)
 	}
 	return instance, nil
+}
+
+func (i LoxClass) findMethod(name string) *LoxFunction {
+	meth, ok := i.Methods[name]
+	if ok {
+		return &meth
+	} else {
+		if i.Superclass != nil {
+			return i.Superclass.findMethod(name)
+		}
+
+		return nil
+	}
 }
 
 type LoxInstance struct {
@@ -42,8 +56,8 @@ func (i *LoxInstance) get(name scanner.Token) (any, error) {
 	if ok {
 		return val, nil
 	}
-	meth, ok := i.class.Methods[name.Lexeme]
-	if ok {
+	meth := i.class.findMethod(name.Lexeme)
+	if meth != nil {
 		return meth.bind(i), nil
 	}
 	return nil, runtimeError{t: name, message: fmt.Sprintf("Undefined property %s.", name.Lexeme)}

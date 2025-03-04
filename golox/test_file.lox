@@ -1,12 +1,12 @@
 class Cake {
-	init (flav) {
-		this.flavor = flav;
+	init (flavor) {
+		this.flavor = flavor;
 	}
 	taste() {
 		var adjective = "delicious";
 		print "The " + this.flavor + " cake is " + adjective + "!";
 	}
 }
-	
-var cake = Cake("strawberry");
+class StrawberryCake < Cake {}
+var cake = StrawberryCake("strawberry");
 cake.taste();
