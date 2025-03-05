@@ -148,6 +148,15 @@ func (e ThisExpr) Accept(v ExprVisitor) (any, error) {
 	return v.VisitThisExpr(e)
 }
 
+type SuperExpr struct {
+	Keyword scanner.Token
+	Method  scanner.Token
+}
+
+func (e SuperExpr) Accept(v ExprVisitor) (any, error) {
+	return v.VisitSuperExpr(e)
+}
+
 type ExprVisitor interface {
 	VisitUnaryExpr(e UnaryExpr) (any, error)
 	VisitBinaryExpr(e BinaryExpr) (any, error)
@@ -160,4 +169,5 @@ type ExprVisitor interface {
 	VisitGetExpr(e GetExpr) (any, error)
 	VisitSetExpr(e SetExpr) (any, error)
 	VisitThisExpr(e ThisExpr) (any, error)
+	VisitSuperExpr(e SuperExpr) (any, error)
 }

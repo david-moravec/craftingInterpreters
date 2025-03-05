@@ -41,9 +41,10 @@ func (l LoxFunction) Call(i Interpreter, args []any) (any, error) {
 }
 
 func (l LoxFunction) bind(i *LoxInstance) LoxFunction {
-	l.closure.define("this", i)
+	env := NewEnvironment(&l.closure)
+	env.define("this", i)
 
-	return LoxFunction{declaration: l.declaration, closure: l.closure, isInit: l.isInit}
+	return LoxFunction{declaration: l.declaration, closure: env, isInit: l.isInit}
 }
 
 func (l LoxFunction) Arity() int {

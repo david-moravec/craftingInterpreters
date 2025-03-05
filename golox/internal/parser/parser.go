@@ -564,7 +564,15 @@ func (p *Parser) primary() (expr.Expr, error) {
 	} else if p.match(scanner.Identifier) {
 		return expr.NewVariable(*p.previous()), nil
 	} else if p.match(scanner.This) {
-		return expr.ThisExpr{*p.previous()}, nil
+		return expr.ThisExpr{Keyword: *p.previous()}, nil
+	} else if p.match(scanner.Super) {
+		kw := p.previous()
+		p.consume(scanner.Dot, "Expected '.' after 'super'.")
+		name, err := p.consume(scanner.Identifier, "Expected method name after '.'.")
+		if err != nil {
+			return nil, err
+		}
+		return expr.SuperExpr{Keyword: *kw, Method: *name}, nil
 	} else if p.match(scanner.LeftParenthesis) {
 		e, err := p.expression()
 		if err != nil {

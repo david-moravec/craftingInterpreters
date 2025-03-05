@@ -71,6 +71,10 @@ func (p AstPrinter) VisitThisExpr(e ThisExpr) (any, error) {
 	return e.Keyword.Lexeme, nil
 }
 
+func (p AstPrinter) VisitSuperExpr(e SuperExpr) (any, error) {
+	return e.Keyword.Lexeme, nil
+}
+
 func (p *AstPrinter) parenthesize(name string, exprs []Expr) string {
 	s := new(bytes.Buffer)
 

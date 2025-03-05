@@ -23,6 +23,7 @@ type classType int
 const (
 	NONe classType = iota
 	CLASS
+	SUBCLASS
 )
 
 type scope map[string]bool
@@ -173,10 +174,14 @@ func (r *Resolver) VisitClassStmt(s stmt.ClassStmt) error {
 	}
 	r.define(s.Name)
 	if s.Superclass != nil {
+		r.currentClassTy = SUBCLASS
 		if s.Superclass.Name.Lexeme == s.Name.Lexeme {
 			return resolverError{t: s.Superclass.Name, message: "Can't inherit from itself."}
 		}
 		r.resolveExpr(s.Superclass)
+		r.beginScope()
+		sc, _ := r.scopes.peek()
+		sc["super"] = true
 	}
 	r.beginScope()
 	sc, _ := r.scopes.peek()
@@ -192,6 +197,9 @@ func (r *Resolver) VisitClassStmt(s stmt.ClassStmt) error {
 	}
 
 	r.endScope()
+	if s.Superclass != nil {
+		r.endScope()
+	}
 	r.currentClassTy = orig
 	return errors.Join(errs...)
 }
@@ -281,9 +289,19 @@ func (r *Resolver) VisitThisExpr(e expr.ThisExpr) (any, error) {
 	}
 	return nil, r.resolveLocal(e.Keyword)
 }
+func (r *Resolver) VisitSuperExpr(e expr.SuperExpr) (any, error) {
+	if r.currentClassTy == NONe {
+		return nil, resolverError{t: e.Keyword, message: "Can't use super outside of class."}
+	}
+	if r.currentClassTy != SUBCLASS {
+		return nil, resolverError{t: e.Keyword, message: "Can't use super in class with no superclass."}
+	}
+	return nil, r.resolveLocal(e.Keyword)
+}
 
 func (r *Resolver) resolveFunction(f stmt.FunctionStmt, ty functionType) error {
 	enclosingTy := r.currentFuncTy
+
 	r.currentFuncTy = ty
 	r.beginScope()
 	for _, param := range f.Params {

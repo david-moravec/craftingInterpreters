@@ -175,6 +175,27 @@ func (i Interpreter) VisitThisExpr(e expr.ThisExpr) (any, error) {
 	return i.lookUpVar(e, e.Keyword)
 }
 
+func (i Interpreter) VisitSuperExpr(e expr.SuperExpr) (any, error) {
+	dist, _ := i.locals[e.Keyword.Key()]
+	super, err := i.env.getAt(dist, e.Keyword)
+	if err != nil {
+		return nil, err
+	}
+	var superclass *LoxClass = super.(*LoxClass)
+	inst, err := i.env.getAt(dist-1, *scanner.DummyThisToken(e.Keyword.Line))
+	if err != nil {
+		return nil, err
+	}
+	var instance *LoxInstance
+	instance = inst.(*LoxInstance)
+	meth := superclass.findMethod(e.Method.Lexeme)
+	if meth == nil {
+		return nil, runtimeError{t: e.Method, message: fmt.Sprintf("Undefined property %s.", e.Method.Lexeme)}
+	}
+
+	return meth.bind(instance), nil
+}
+
 func (i Interpreter) VisitLiteralExpr(e expr.LiteralExpr) (any, error) {
 	switch e.LitType {
 	case expr.NumberType:
@@ -382,10 +403,30 @@ func (i *Interpreter) VisitReturnStmt(s stmt.ReturnStmt) error {
 func (i *Interpreter) VisitClassStmt(s stmt.ClassStmt) error {
 	i.env.define(s.Name.Lexeme, nil)
 
-	var methods map[string]LoxFunction = make(map[string]LoxFunction)
+	var superclass *LoxClass = nil
 
-	var superclass any
-	var err error
+	if s.Superclass != nil {
+		supercl, err := i.evaluate(s.Superclass)
+		if err != nil {
+			return err
+		}
+		switch supercl.(type) {
+		case LoxClass:
+			supercl := supercl.(LoxClass)
+			superclass = &supercl
+		default:
+			return runtimeError{t: s.Superclass.Name, message: "Superclass must be class."}
+		}
+	}
+
+	var enclosing Environment = i.env
+
+	if superclass != nil {
+		i.env = NewEnvironment(&enclosing)
+		i.env.define("super", superclass)
+	}
+
+	var methods map[string]LoxFunction = make(map[string]LoxFunction)
 
 	for _, meth := range s.Methods {
 		methods[meth.Name.Lexeme] = LoxFunction{
@@ -395,24 +436,11 @@ func (i *Interpreter) VisitClassStmt(s stmt.ClassStmt) error {
 		}
 	}
 
-	var klass LoxClass
-
-	if s.Superclass != nil {
-		superclass, err = i.evaluate(s.Superclass)
-		if err != nil {
-			return err
-		}
-		switch superclass.(type) {
-		case LoxClass:
-			superclass := superclass.(LoxClass)
-			klass = LoxClass{Name: s.Name, Methods: methods, Superclass: &superclass}
-		default:
-			return runtimeError{t: s.Superclass.Name, message: "Superclass must be class."}
-		}
-	} else {
-		klass = LoxClass{Name: s.Name, Methods: methods, Superclass: nil}
-
+	if superclass != nil {
+		i.env = enclosing
 	}
+
+	klass := LoxClass{Name: s.Name, Methods: methods, Superclass: superclass}
 
 	return i.env.assign(s.Name, klass)
 }
