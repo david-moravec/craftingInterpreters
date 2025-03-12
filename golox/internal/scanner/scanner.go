@@ -257,8 +257,8 @@ func (s *Scanner) resolveTokenKind() (TokenKind, string, float64, error) {
 		} else {
 			return Greater, "", math.NaN(), nil
 		}
-	case '\\':
-		if s.match('\\') {
+	case '/':
+		if s.match('/') {
 			for {
 				c, err := s.peek()
 
