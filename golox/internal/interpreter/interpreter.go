@@ -515,7 +515,7 @@ func stringify(a any) string {
 	}
 	switch a.(type) {
 	case float64:
-		return fmt.Sprintf("%.2f", a)
+		return fmt.Sprintf("%f", a)
 	case fmt.Stringer:
 		return a.(fmt.Stringer).String()
 	}
