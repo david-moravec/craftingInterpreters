@@ -499,9 +499,9 @@ func checkOperandNumber(o scanner.Token, r any) error {
 
 func checkOperandsNumber(o scanner.Token, l any, r any) error {
 	switch r.(type) {
-	case float64:
+	case float64, bool:
 		switch l.(type) {
-		case float64:
+		case float64, bool:
 			return nil
 		}
 	}
