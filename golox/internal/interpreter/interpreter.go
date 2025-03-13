@@ -279,12 +279,12 @@ func (i Interpreter) VisitBinaryExpr(e expr.BinaryExpr) (any, error) {
 		}
 		result = l.(float64) <= r.(float64)
 	case scanner.BangEqual:
-		if err = checkOperandsNumber(scanner.Token(e.Operator), l, r); err != nil {
+		if err = checkOperandsComparable(scanner.Token(e.Operator), l, r); err != nil {
 			return nil, err
 		}
 		result = !isEqual(l, r)
 	case scanner.EqualEqual:
-		if err = checkOperandsNumber(scanner.Token(e.Operator), l, r); err != nil {
+		if err = checkOperandsComparable(scanner.Token(e.Operator), l, r); err != nil {
 			return nil, err
 		}
 		result = isEqual(l, r)
@@ -507,6 +507,18 @@ func checkOperandsNumber(o scanner.Token, l any, r any) error {
 	}
 
 	return runtimeError{o, "Operands must be numbers"}
+}
+
+func checkOperandsComparable(o scanner.Token, l any, r any) error {
+	switch r.(type) {
+	case float64, bool, string:
+		switch l.(type) {
+		case float64, bool, string:
+			return nil
+		}
+	}
+
+	return runtimeError{o, "Operands must be numbers, bools, strings to be comparable"}
 }
 
 func stringify(a any) string {
