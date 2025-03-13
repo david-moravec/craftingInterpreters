@@ -325,9 +325,13 @@ func (r *Resolver) resolveFunction(f stmt.FunctionStmt, ty functionType) error {
 
 func (r *Resolver) resolveLocal(name scanner.Token) error {
 	for i := len(r.scopes) - 1; i >= 0; i = i - 1 {
-		_, ok := r.scopes[i][name.Lexeme]
+		is_resolved, ok := r.scopes[i][name.Lexeme]
 		if ok {
-			r.interpreter.Resolve(name, len(r.scopes)-1-i)
+			if is_resolved {
+				r.interpreter.Resolve(name, len(r.scopes)-1-i)
+				break
+			}
+
 		}
 	}
 

@@ -41,8 +41,6 @@ func run(source string, interpreter interpreter.Interpreter) error {
 	err = interpreter.Interpret(stmts)
 
 	if err != nil {
-		fmt.Println(err)
-
 		return nil
 	}
 

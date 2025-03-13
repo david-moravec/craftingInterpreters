@@ -132,7 +132,7 @@ func (s *Scanner) createString() (TokenKind, string, float64, error) {
 		}
 
 		if c == '\n' {
-			s.line++
+			s.line += 1
 		}
 
 		s.advance()
@@ -263,7 +263,7 @@ func (s *Scanner) resolveTokenKind() (TokenKind, string, float64, error) {
 				c, err := s.peek()
 
 				if err != nil {
-					return EOF, "", math.NaN(), err
+					return EOF, "", math.NaN(), nil
 				}
 
 				if c == '\n' {
@@ -272,7 +272,6 @@ func (s *Scanner) resolveTokenKind() (TokenKind, string, float64, error) {
 				s.advance()
 			}
 
-			s.line += 1
 			return Meaningless, "", math.NaN(), nil
 		} else {
 			return Slash, "", math.NaN(), nil

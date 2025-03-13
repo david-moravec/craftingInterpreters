@@ -50,6 +50,7 @@ func (i *Interpreter) Interpret(stmts []stmt.Stmt) error {
 		err := i.execute(s)
 
 		if err != nil {
+			fmt.Print(err)
 			errs = append(errs, err)
 		}
 	}
@@ -511,9 +512,9 @@ func checkOperandsNumber(o scanner.Token, l any, r any) error {
 
 func checkOperandsComparable(o scanner.Token, l any, r any) error {
 	switch r.(type) {
-	case float64, bool, string:
+	case float64, bool, string, nil:
 		switch l.(type) {
-		case float64, bool, string:
+		case float64, bool, string, nil:
 			return nil
 		}
 	}
@@ -523,7 +524,7 @@ func checkOperandsComparable(o scanner.Token, l any, r any) error {
 
 func stringify(a any) string {
 	if a == nil {
-		return "Nil"
+		return "nil"
 	}
 	switch a.(type) {
 	case float64:

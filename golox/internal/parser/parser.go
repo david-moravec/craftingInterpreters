@@ -364,7 +364,10 @@ func (p *Parser) or() (expr.Expr, error) {
 		}
 		op := p.previous()
 		r, err := p.and()
-		return expr.LogicalExpr{Right: r, Operator: *op, Left: e}, err
+		if err != nil {
+			return nil, err
+		}
+		e = expr.LogicalExpr{Right: r, Operator: *op, Left: e}
 	}
 	return e, err
 }
@@ -377,7 +380,10 @@ func (p *Parser) and() (expr.Expr, error) {
 		}
 		op := p.previous()
 		r, err := p.equality()
-		return expr.LogicalExpr{Right: r, Operator: *op, Left: e}, err
+		if err != nil {
+			return nil, err
+		}
+		e = expr.LogicalExpr{Right: r, Operator: *op, Left: e}
 	}
 	return e, err
 }
