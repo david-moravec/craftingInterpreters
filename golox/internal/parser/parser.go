@@ -218,8 +218,17 @@ func (p *Parser) forStatement() (stmt.Stmt, error) {
 	errs = append(errs, err)
 	body, err := p.statement()
 	errs = append(errs, err)
+
 	if incr != nil {
-		var stmts = []stmt.Stmt{body, stmt.ExpressionStmt{Expression: incr}}
+		var stmts []stmt.Stmt
+		incr := stmt.ExpressionStmt{Expression: incr}
+		switch body.(type) {
+		case stmt.BlockStmt:
+			stmts = body.(stmt.BlockStmt).Statements
+			stmts = append(stmts, incr)
+		default:
+			stmts = []stmt.Stmt{body, incr}
+		}
 		body = stmt.BlockStmt{Statements: stmts}
 	}
 	if condition == nil {
@@ -227,8 +236,18 @@ func (p *Parser) forStatement() (stmt.Stmt, error) {
 	}
 	body = stmt.WhileStmt{Condition: condition, Body: body}
 	if init != nil {
+		var stmts []stmt.Stmt
+		s := body.(stmt.WhileStmt).Body
+		switch s.(type) {
+		case stmt.BlockStmt:
+			stmts = s.(stmt.BlockStmt).Statements
+			stmts = append(stmts, init)
+		default:
+			stmts = []stmt.Stmt{body, init}
+		}
 		body = stmt.BlockStmt{Statements: []stmt.Stmt{init, body}}
 	}
+
 	return body, errors.Join(errs...)
 }
 
