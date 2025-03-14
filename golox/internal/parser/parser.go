@@ -199,15 +199,18 @@ func (p *Parser) forStatement() (stmt.Stmt, error) {
 		}
 		init = &i
 	}
+
 	var condition expr.Expr = nil
-	if !p.checkCurrentKind(scanner.Semicolon) {
-		condition, err = p.expression()
-		errs = append(errs, err)
+	if !p.checkCurrentKind(scanner.RightParenthesis) {
+		if !p.checkCurrentKind(scanner.Semicolon) {
+			condition, err = p.expression()
+			errs = append(errs, err)
+		}
+		errs = append(errs, p.consume_semicolon())
 	}
-	err = p.consume_semicolon()
-	errs = append(errs, err)
+
 	var incr expr.Expr = nil
-	if !p.checkCurrentKind(scanner.Semicolon) {
+	if !p.checkCurrentKind(scanner.RightParenthesis) {
 		incr, err = p.expression()
 		errs = append(errs, err)
 	}
