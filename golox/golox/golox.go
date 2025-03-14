@@ -25,6 +25,7 @@ func run(source string, interpreter interpreter.Interpreter) error {
 	stmts, errs := p.Parse()
 
 	if len(errs) != 0 {
+		fmt.Println("\nParserErrors:")
 		for _, err := range errs {
 			fmt.Println(err)
 		}
@@ -35,7 +36,10 @@ func run(source string, interpreter interpreter.Interpreter) error {
 	res := resolver.NewResolver(interpreter)
 	err := res.Resolve(stmts)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("\nResolverErrors:")
+		for _, err := range errs {
+			fmt.Println(err)
+		}
 
 		return nil
 	}

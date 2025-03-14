@@ -11,7 +11,7 @@ type environmentError struct {
 }
 
 func (e environmentError) Error() string {
-	return fmt.Sprintf("[Line %d] %s '%s'", e.name.Line, e.message, e.name.Lexeme)
+	return fmt.Sprintf("EnvError [Line %d] %s '%s'", e.name.Line, e.message, e.name.Lexeme)
 }
 
 func undefinedError(name scanner.Token) environmentError {

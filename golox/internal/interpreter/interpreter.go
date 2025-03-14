@@ -21,7 +21,7 @@ func (e GoloxError) Error() string {
 type runtimeError GoloxError
 
 func (e runtimeError) Error() string {
-	return fmt.Sprintf("[Line: %d]: %s", e.t.Line, e.message)
+	return fmt.Sprintf("RuntimeError [Line: %d]: %s", e.t.Line, e.message)
 }
 
 type unknownTypeError struct {

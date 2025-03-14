@@ -20,7 +20,7 @@ func newParseError(token scanner.Token, message string) parseError {
 }
 
 func (e parseError) Error() string {
-	return fmt.Sprintf("Error [line %d]: Parse error at '%s' %s", e.line, e.lexeme, e.message)
+	return fmt.Sprintf("ParseError [line %d]: Parse error at '%s' %s", e.line, e.lexeme, e.message)
 
 }
 

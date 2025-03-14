@@ -61,7 +61,7 @@ type resolverError struct {
 }
 
 func (e resolverError) Error() string {
-	return fmt.Sprintf("[Line: %d]: %s", e.t.Line, e.message)
+	return fmt.Sprintf("ResolverError [Line: %d]: %s", e.t.Line, e.message)
 }
 
 type Resolver struct {
