@@ -66,7 +66,7 @@ func (i *LoxInstance) get(name scanner.Token) (any, error) {
 func (i *LoxInstance) set(name scanner.Token, value any) (any, error) {
 	i.fields[name.Lexeme] = value
 
-	return nil, nil
+	return value, nil
 }
 
 func (i LoxInstance) String() string {
