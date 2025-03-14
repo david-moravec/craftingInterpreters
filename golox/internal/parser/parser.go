@@ -162,9 +162,14 @@ func (p *Parser) statement() (stmt.Stmt, error) {
 
 func (p *Parser) returnStatement() (stmt.Stmt, error) {
 	keyword := p.previous()
-	val, err := p.expression()
-	if err != nil {
-		return nil, err
+	var val expr.Expr = nil
+	var err error
+	if !p.checkCurrentKind(scanner.Semicolon) {
+		val, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+
 	}
 	err = p.consume_semicolon()
 	if err != nil {

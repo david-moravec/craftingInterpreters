@@ -394,10 +394,17 @@ func (i *Interpreter) VisitFunctionStmt(s stmt.FunctionStmt) error {
 }
 
 func (i *Interpreter) VisitReturnStmt(s stmt.ReturnStmt) error {
-	val, err := i.evaluate(s.Value)
-	if err != nil {
-		return err
+	var val any
+	var err error
+	if s.Value != nil {
+		val, err = i.evaluate(s.Value)
+		if err != nil {
+			return err
+		}
+	} else {
+		val = nil
 	}
+
 	return stmt.Return{Value: val}
 }
 
