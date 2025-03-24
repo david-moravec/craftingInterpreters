@@ -23,6 +23,6 @@ void push(Value** stackTop, Value value);
 Value pop(Value** stackTop);
 void initVM(VM* vm);
 void freeVM(VM* vm);
-InterpretResult interpret(Chunk* chunk, VM* vm);
+InterpretResult interpret(const char* source, VM* vm);
 
 #endif
