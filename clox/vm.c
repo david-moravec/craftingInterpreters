@@ -30,6 +30,15 @@ void freeVM(VM* vm) {
 static InterpretResult run(VM* vm) {
 #define READ_BYTE() (*vm->ip++)
 #define READ_CONSTANT() (vm->chunk->constants.values[READ_BYTE()])
+#define POP() pop(&vm->stackTop)
+#define PUSH(value) push(&vm->stackTop, value)
+#define BINARY_OP(op)                                                          \
+  do {                                                                         \
+    double b = POP();                                                          \
+    double a = POP();                                                          \
+    PUSH(a op b);                                                              \
+  } while (false)
+
   for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
     for (Value* slot = vm->stack; slot < vm->stackTop; slot++) {
@@ -46,13 +55,36 @@ static InterpretResult run(VM* vm) {
       push(&vm->stackTop, value);
       break;
     }
+    case OP_ADD: {
+      BINARY_OP(+);
+      break;
+    }
+    case OP_SUBTRACT: {
+      BINARY_OP(-);
+      break;
+    }
+    case OP_MULTIPLY: {
+      BINARY_OP(*);
+      break;
+    }
+    case OP_DIVIDE: {
+      BINARY_OP(/);
+      break;
+    }
+    case OP_NEGATE: {
+      PUSH(-POP());
+      break;
+    }
     case OP_RETURN: {
-      printValue(pop(&vm->stackTop));
+      printValue(POP());
       printf("\n");
       return INTERPRET_OK;
     }
     }
   }
+#undef BINARY_OP
+#undef PUSH
+#undef POP
 #undef READ_CONSTANT
 #undef READ_BYTE
 }
