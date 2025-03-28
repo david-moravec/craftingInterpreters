@@ -4,6 +4,22 @@
 #include "compiler.h"
 #include "scanner.h"
 
+typedef struct {
+  Token current;
+  Token previous;
+} Parser;
+
+void advance(Parser* parser, Scanner* scanner) {
+  parser->previous = parser->current;
+  for (;;) {
+    parser->current = scanToken(scanner);
+    if (parser->current != TOKEN_ERROR)
+      break;
+
+    errorAtCurrent(parser->current.start);
+  }
+}
+
 void compile(const char* source) {
   Scanner scanner;
   initScanner(source, &scanner);
