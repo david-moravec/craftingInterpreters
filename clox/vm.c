@@ -1,9 +1,11 @@
 #include "chunk.h"
+#include "compiler.h"
 #include "debug.h"
 #include "value.h"
-#include "compiler.h"
 #include "vm.h"
+#include <stdarg.h>
 #include <stdio.h>
+#include <vadefs.h>
 
 void resetStack(VM* vm) { vm->stackTop = vm->stack; }
 
@@ -26,6 +28,21 @@ void initVM(VM* vm) {
 void freeVM(VM* vm) {
   freeChunk(vm->chunk);
   initVM(vm);
+}
+
+static Value peek(VM* vm, int distance) { return vm->stackTop[-1 - distance]; }
+
+static void runtimeError(VM* vm, const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  vfprintf(stderr, format, args);
+  va_end(args);
+  fputs("\n", stderr);
+
+  size_t instuction = vm->ip - vm->chunk->code - 1;
+  int line = vm->chunk->lines[instuction];
+  fprintf(stderr, "[line %d] in script\n", line);
+  resetStack(vm);
 }
 
 static InterpretResult run(VM* vm) {
@@ -73,7 +90,11 @@ static InterpretResult run(VM* vm) {
       break;
     }
     case OP_NEGATE: {
-      PUSH(-POP());
+      if (!IS_NUMBER(peek(vm, 0))) {
+        runtimeError(vm, "Operand must be number.");
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      PUSH(NUMBER_VAL(-AS_NUMBER(POP())));
       break;
     }
     case OP_RETURN: {

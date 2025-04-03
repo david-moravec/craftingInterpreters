@@ -6,6 +6,7 @@
 #include "common.h"
 #include "compiler.h"
 #include "scanner.h"
+#include "value.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -176,7 +177,7 @@ static void emitConstant(Parser* parser, Value value) {
 
 static void number(Parser* parser, Scanner* scanner) {
   double value = strtod(parser->previous.start, NULL);
-  emitConstant(parser, value);
+  emitConstant(parser, NUMBER_VAL(value));
 }
 
 ParseRule rules[] = {
