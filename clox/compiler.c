@@ -6,6 +6,7 @@
 #include "common.h"
 #include "compiler.h"
 #include "scanner.h"
+#include "value.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -62,7 +63,7 @@ static void errorAt(Parser* parser, const Token* token, const char* message) {
     fprintf(stderr, " at '%.*s'", token->length, token->start);
   }
 
-  fprintf(stderr, ": %s/n", message);
+  fprintf(stderr, ": %s\n", message);
   parser->hadError = true;
 }
 
@@ -124,6 +125,24 @@ static void binary(Parser* parser, Scanner* scanner) {
   parsePrecedence(parser, scanner, (Precedence)(rule->precedence + 1));
 
   switch (operatorType) {
+  case TOKEN_BANG_EQUAL:
+    emitBytes(parser, OP_EQUAL, OP_NOT);
+    break;
+  case TOKEN_EQUAL_EQUAL:
+    emitByte(parser, OP_EQUAL);
+    break;
+  case TOKEN_GREATER:
+    emitByte(parser, OP_GREATER);
+    break;
+  case TOKEN_GREATER_EQUAL:
+    emitBytes(parser, OP_LESS, OP_NOT);
+    break;
+  case TOKEN_LESS:
+    emitByte(parser, OP_LESS);
+    break;
+  case TOKEN_LESS_EQUAL:
+    emitBytes(parser, OP_GREATER, OP_NOT);
+    break;
   case TOKEN_PLUS:
     emitByte(parser, OP_ADD);
     break;
@@ -152,6 +171,9 @@ static void unary(Parser* parser, Scanner* scanner) {
   parsePrecedence(parser, scanner, PREC_UNARY);
 
   switch (operatorType) {
+  case TOKEN_BANG:
+    emitByte(parser, OP_NOT);
+    break;
   case TOKEN_MINUS:
     emitByte(parser, OP_NEGATE);
     break;
@@ -176,7 +198,16 @@ static void emitConstant(Parser* parser, Value value) {
 
 static void number(Parser* parser, Scanner* scanner) {
   double value = strtod(parser->previous.start, NULL);
-  emitConstant(parser, value);
+  emitConstant(parser, NUMBER_VAL(value));
+}
+
+static void literal(Parser* parser, Scanner* scanner) {
+  switch (parser->previous.type) {
+    case TOKEN_FALSE: emitByte(parser, OP_FALSE); break;
+    case TOKEN_TRUE: emitByte(parser, OP_TRUE); break;
+    case TOKEN_NIL: emitByte(parser, OP_NIL); break;
+    default: return; // unreachable
+  }
 }
 
 ParseRule rules[] = {
@@ -191,31 +222,31 @@ ParseRule rules[] = {
     [TOKEN_SEMICOLON] = {NULL, NULL, PREC_NONE},
     [TOKEN_SLASH] = {NULL, binary, PREC_FACTOR},
     [TOKEN_STAR] = {NULL, binary, PREC_FACTOR},
-    [TOKEN_BANG] = {NULL, NULL, PREC_NONE},
-    [TOKEN_BANG_EQUAL] = {NULL, NULL, PREC_NONE},
+    [TOKEN_BANG] = {unary, NULL, PREC_NONE},
+    [TOKEN_BANG_EQUAL] = {NULL, binary, PREC_EQUALITY},
     [TOKEN_EQUAL] = {NULL, NULL, PREC_NONE},
-    [TOKEN_EQUAL_EQUAL] = {NULL, NULL, PREC_NONE},
-    [TOKEN_GREATER] = {NULL, NULL, PREC_NONE},
-    [TOKEN_GREATER_EQUAL] = {NULL, NULL, PREC_NONE},
-    [TOKEN_LESS] = {NULL, NULL, PREC_NONE},
-    [TOKEN_LESS_EQUAL] = {NULL, NULL, PREC_NONE},
+    [TOKEN_EQUAL_EQUAL] = {NULL, binary, PREC_EQUALITY},
+    [TOKEN_GREATER] = {NULL, binary, PREC_EQUALITY},
+    [TOKEN_GREATER_EQUAL] = {NULL, binary, PREC_EQUALITY},
+    [TOKEN_LESS] = {NULL, binary, PREC_EQUALITY},
+    [TOKEN_LESS_EQUAL] = {NULL, binary, PREC_EQUALITY},
     [TOKEN_IDENTIFIER] = {NULL, NULL, PREC_NONE},
     [TOKEN_STRING] = {NULL, NULL, PREC_NONE},
     [TOKEN_NUMBER] = {number, NULL, PREC_NONE},
     [TOKEN_AND] = {NULL, NULL, PREC_NONE},
     [TOKEN_CLASS] = {NULL, NULL, PREC_NONE},
     [TOKEN_ELSE] = {NULL, NULL, PREC_NONE},
-    [TOKEN_FALSE] = {NULL, NULL, PREC_NONE},
+    [TOKEN_FALSE] = {literal, NULL, PREC_NONE},
     [TOKEN_FOR] = {NULL, NULL, PREC_NONE},
     [TOKEN_FUN] = {NULL, NULL, PREC_NONE},
     [TOKEN_IF] = {NULL, NULL, PREC_NONE},
-    [TOKEN_NIL] = {NULL, NULL, PREC_NONE},
+    [TOKEN_NIL] = {literal, NULL, PREC_NONE},
     [TOKEN_OR] = {NULL, NULL, PREC_NONE},
     [TOKEN_PRINT] = {NULL, NULL, PREC_NONE},
     [TOKEN_RETURN] = {NULL, NULL, PREC_NONE},
     [TOKEN_SUPER] = {NULL, NULL, PREC_NONE},
     [TOKEN_THIS] = {NULL, NULL, PREC_NONE},
-    [TOKEN_TRUE] = {NULL, NULL, PREC_NONE},
+    [TOKEN_TRUE] = {literal, NULL, PREC_NONE},
     [TOKEN_VAR] = {NULL, NULL, PREC_NONE},
     [TOKEN_WHILE] = {NULL, NULL, PREC_NONE},
     [TOKEN_ERROR] = {NULL, NULL, PREC_NONE},
