@@ -5,8 +5,10 @@
 #include "chunk.h"
 #include "common.h"
 #include "compiler.h"
+#include "object.h"
 #include "scanner.h"
 #include "value.h"
+#include "vm.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -33,7 +35,7 @@ typedef enum {
   PREC_PRIMARY
 } Precedence;
 
-typedef void (*ParseFn)(Parser*, Scanner*);
+typedef void (*ParseFn)(VM*, Parser*, Scanner*);
 
 typedef struct {
   ParseFn prefix;
@@ -42,7 +44,7 @@ typedef struct {
 } ParseRule;
 
 static ParseRule* getRule(TokenType type);
-static void parsePrecedence(Parser* parser, Scanner* scanner,
+static void parsePrecedence(VM* vm, Parser* parser, Scanner* scanner,
                             Precedence precedence);
 
 Chunk* compilingChunk;
@@ -115,14 +117,14 @@ static void endCompiler(Parser* parser) {
 #endif
 }
 
-static void expression(Parser* parser, Scanner* scanner) {
-  parsePrecedence(parser, scanner, PREC_ASSIGNMENT);
+static void expression(VM* vm, Parser* parser, Scanner* scanner) {
+  parsePrecedence(vm, parser, scanner, PREC_ASSIGNMENT);
 }
 
-static void binary(Parser* parser, Scanner* scanner) {
+static void binary(VM* vm, Parser* parser, Scanner* scanner) {
   TokenType operatorType = parser->previous.type;
   ParseRule* rule = getRule(operatorType);
-  parsePrecedence(parser, scanner, (Precedence)(rule->precedence + 1));
+  parsePrecedence(vm, parser, scanner, (Precedence)(rule->precedence + 1));
 
   switch (operatorType) {
   case TOKEN_BANG_EQUAL:
@@ -160,15 +162,15 @@ static void binary(Parser* parser, Scanner* scanner) {
   }
 }
 
-static void grouping(Parser* parser, Scanner* scanner) {
-  expression(parser, scanner);
+static void grouping(VM* vm, Parser* parser, Scanner* scanner) {
+  expression(vm, parser, scanner);
   consume(parser, scanner, TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
-static void unary(Parser* parser, Scanner* scanner) {
+static void unary(VM* vm, Parser* parser, Scanner* scanner) {
   TokenType operatorType = parser->previous.type;
 
-  parsePrecedence(parser, scanner, PREC_UNARY);
+  parsePrecedence(vm, parser, scanner, PREC_UNARY);
 
   switch (operatorType) {
   case TOKEN_BANG:
@@ -196,18 +198,30 @@ static void emitConstant(Parser* parser, Value value) {
   emitBytes(parser, OP_CONSTANT, makeConstant(parser, value));
 }
 
-static void number(Parser* parser, Scanner* scanner) {
+static void number(VM* vm, Parser* parser, Scanner* scanner) {
   double value = strtod(parser->previous.start, NULL);
   emitConstant(parser, NUMBER_VAL(value));
 }
 
-static void literal(Parser* parser, Scanner* scanner) {
+static void literal(VM* vm, Parser* parser, Scanner* scanner) {
   switch (parser->previous.type) {
-    case TOKEN_FALSE: emitByte(parser, OP_FALSE); break;
-    case TOKEN_TRUE: emitByte(parser, OP_TRUE); break;
-    case TOKEN_NIL: emitByte(parser, OP_NIL); break;
-    default: return; // unreachable
+  case TOKEN_FALSE:
+    emitByte(parser, OP_FALSE);
+    break;
+  case TOKEN_TRUE:
+    emitByte(parser, OP_TRUE);
+    break;
+  case TOKEN_NIL:
+    emitByte(parser, OP_NIL);
+    break;
+  default:
+    return; // unreachable
   }
+}
+
+static void string(VM* vm, Parser* parser, Scanner* scanner) {
+  emitConstant(parser, OBJ_VAL(copyString(vm, parser->previous.start + 1,
+                                          parser->previous.length - 2)));
 }
 
 ParseRule rules[] = {
@@ -231,7 +245,7 @@ ParseRule rules[] = {
     [TOKEN_LESS] = {NULL, binary, PREC_EQUALITY},
     [TOKEN_LESS_EQUAL] = {NULL, binary, PREC_EQUALITY},
     [TOKEN_IDENTIFIER] = {NULL, NULL, PREC_NONE},
-    [TOKEN_STRING] = {NULL, NULL, PREC_NONE},
+    [TOKEN_STRING] = {string, NULL, PREC_NONE},
     [TOKEN_NUMBER] = {number, NULL, PREC_NONE},
     [TOKEN_AND] = {NULL, NULL, PREC_NONE},
     [TOKEN_CLASS] = {NULL, NULL, PREC_NONE},
@@ -255,7 +269,7 @@ ParseRule rules[] = {
 
 static ParseRule* getRule(TokenType type) { return &rules[type]; }
 
-static void parsePrecedence(Parser* parser, Scanner* scanner,
+static void parsePrecedence(VM* vm, Parser* parser, Scanner* scanner,
                             Precedence precedence) {
   advance(parser, scanner);
   ParseFn prefix = getRule(parser->previous.type)->prefix;
@@ -264,16 +278,16 @@ static void parsePrecedence(Parser* parser, Scanner* scanner,
     return;
   }
 
-  prefix(parser, scanner);
+  prefix(vm, parser, scanner);
 
   while (precedence <= getRule(parser->current.type)->precedence) {
     advance(parser, scanner);
     ParseFn infix = getRule(parser->previous.type)->infix;
-    infix(parser, scanner);
+    infix(vm, parser, scanner);
   }
 }
 
-bool compile(const char* source, Chunk* chunk) {
+bool compile(VM* vm, const char* source, Chunk* chunk) {
   Scanner scanner;
   Parser parser;
   initScanner(source, &scanner);
@@ -283,7 +297,7 @@ bool compile(const char* source, Chunk* chunk) {
   parser.panicMode = false;
 
   advance(&parser, &scanner);
-  expression(&parser, &scanner);
+  expression(vm, &parser, &scanner);
   consume(&parser, &scanner, TOKEN_EOF, "Expect end of expression.");
   endCompiler(&parser);
 

@@ -1,11 +1,15 @@
-#include "vm.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <vadefs.h>
+
 #include "chunk.h"
 #include "compiler.h"
 #include "debug.h"
+#include "memory.h"
+#include "object.h"
 #include "value.h"
-#include <stdarg.h>
-#include <stdio.h>
-#include <vadefs.h>
+#include "vm.h"
 
 void resetStack(VM* vm) { vm->stackTop = vm->stack; }
 
@@ -23,10 +27,12 @@ void initVM(VM* vm) {
   resetStack(vm);
   vm->chunk = NULL;
   vm->ip = NULL;
+  vm->objects = NULL;
 }
 
 void freeVM(VM* vm) {
   freeChunk(vm->chunk);
+  freeObjects(vm->objects);
   initVM(vm);
 }
 
@@ -49,19 +55,18 @@ static bool isFalsey(Value value) {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
 
-static bool valuesEqual(Value a, Value b) {
-  if (a.type != b.type)
-    return false;
-  switch (a.type) {
-  case VAL_BOOL:
-    return AS_BOOL(a) == AS_BOOL(b);
-  case VAL_NIL:
-    return true;
-  case VAL_NUMBER:
-    return AS_NUMBER(a) == AS_NUMBER(b);
-  default:
-    return false; // unreachable
-  }
+static void concatenate(VM* vm) {
+  ObjString* a = AS_STRING(pop(&vm->stackTop));
+  ObjString* b = AS_STRING(pop(&vm->stackTop));
+
+  int length = a->length + b->length;
+  char* chars = ALLOCATE(char, length + 1);
+  memcpy(chars, a, a->length);
+  memcpy(chars + a->length, b, b->length);
+  chars[length] = '\0';
+
+  ObjString* result = takeString(vm, chars, length);
+  push(&vm->stackTop, OBJ_VAL(result));
 }
 
 static InterpretResult run(VM* vm) {
@@ -123,7 +128,16 @@ static InterpretResult run(VM* vm) {
       break;
     }
     case OP_ADD: {
-      BINARY_OP(NUMBER_VAL, +);
+      if (IS_STRING(peek(vm, 0)) && IS_STRING(peek(vm, 1))) {
+        concatenate(vm);
+      } else if (IS_NUMBER(peek(vm, 0)) && IS_NUMBER(peek(vm, 1))) {
+        double b = AS_NUMBER(POP());
+        double a = AS_NUMBER(POP());
+        PUSH(NUMBER_VAL(a + b));
+      } else {
+        runtimeError(vm, "Operands must be two numbers or two strings.");
+        return INTERPRET_RUNTIME_ERROR;
+      }
       break;
     }
     case OP_SUBTRACT: {
@@ -167,7 +181,7 @@ static InterpretResult run(VM* vm) {
 InterpretResult interpret(const char* source, VM* vm) {
   Chunk chunk;
   initChunk(&chunk);
-  if (!compile(source, &chunk)) {
+  if (!compile(vm, source, &chunk)) {
     freeChunk(&chunk);
     return INTERPRET_COMPILE_ERROR;
   };
