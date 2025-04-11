@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "memory.h"
 #include "object.h"
+#include "table.h"
 #include "value.h"
 #include "vm.h"
 
@@ -28,10 +29,12 @@ void initVM(VM* vm) {
   vm->chunk = NULL;
   vm->ip = NULL;
   vm->objects = NULL;
+  initTable(&vm->strings);
 }
 
 void freeVM(VM* vm) {
   freeChunk(vm->chunk);
+  freeTable(&vm->strings);
   freeObjects(vm->objects);
   initVM(vm);
 }
