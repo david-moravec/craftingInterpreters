@@ -167,9 +167,12 @@ static InterpretResult run(VM* vm) {
       PUSH(NUMBER_VAL(-AS_NUMBER(POP())));
       break;
     }
-    case OP_RETURN: {
+    case OP_PRINT: {
       printValue(POP());
       printf("\n");
+      break;
+    }
+    case OP_RETURN: {
       return INTERPRET_OK;
     }
     }
