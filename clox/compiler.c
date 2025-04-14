@@ -43,6 +43,9 @@ typedef struct {
   Precedence precedence;
 } ParseRule;
 
+static void expression(VM* vm, Parser* parser, Scanner* scanner);
+static void statement(VM* vm, Parser* parser, Scanner* scanner);
+static void declaration(VM* vm, Parser* parser, Scanner* scanner);
 static ParseRule* getRule(TokenType type);
 static void parsePrecedence(VM* vm, Parser* parser, Scanner* scanner,
                             Precedence precedence);
@@ -97,6 +100,17 @@ static void consume(Parser* parser, Scanner* scanner, TokenType expected,
   errorAtCurrent(parser, message);
 }
 
+static bool check(Parser* parser, TokenType type) {
+  return parser->current.type == type;
+}
+
+static bool match(Parser* parser, Scanner* scanner, TokenType type) {
+  if (!check(parser, type))
+    return false;
+  advance(parser, scanner);
+  return true;
+}
+
 static void emitByte(const Parser* parser, const byte b) {
   writeChunk(currentChunk(), b, parser->previous.line);
 }
@@ -119,6 +133,12 @@ static void endCompiler(Parser* parser) {
 
 static void expression(VM* vm, Parser* parser, Scanner* scanner) {
   parsePrecedence(vm, parser, scanner, PREC_ASSIGNMENT);
+}
+
+static void printStatement(VM* vm, Parser* parser, Scanner* scanner) {
+  expression(vm, parser, scanner);
+  consume(parser, scanner, TOKEN_SEMICOLON, "Expected ';' after expression.");
+  emitByte(parser, OP_PRINT);
 }
 
 static void binary(VM* vm, Parser* parser, Scanner* scanner) {
@@ -287,6 +307,16 @@ static void parsePrecedence(VM* vm, Parser* parser, Scanner* scanner,
   }
 }
 
+static void declaration(VM* vm, Parser* parser, Scanner* scanner) {
+  statement(vm, parser, scanner);
+}
+
+static void statement(VM* vm, Parser* parser, Scanner* scanner) {
+  if (match(parser, scanner, TOKEN_PRINT)) {
+    printStatement(vm, parser, scanner);
+  }
+}
+
 bool compile(VM* vm, const char* source, Chunk* chunk) {
   Scanner scanner;
   Parser parser;
@@ -297,8 +327,11 @@ bool compile(VM* vm, const char* source, Chunk* chunk) {
   parser.panicMode = false;
 
   advance(&parser, &scanner);
-  expression(vm, &parser, &scanner);
-  consume(&parser, &scanner, TOKEN_EOF, "Expect end of expression.");
+
+  while (!match(&parser, &scanner, TOKEN_EOF)) {
+    declaration(vm, &parser, &scanner);
+  }
+
   endCompiler(&parser);
 
   return !parser.hadError;
