@@ -141,6 +141,12 @@ static void printStatement(VM* vm, Parser* parser, Scanner* scanner) {
   emitByte(parser, OP_PRINT);
 }
 
+static void expressionStatement(VM* vm, Parser* parser, Scanner* scanner) {
+  expression(vm, parser, scanner);
+  consume(parser, scanner, TOKEN_SEMICOLON, "Expected ';' after expression.");
+  emitByte(parser, OP_POP);
+}
+
 static void binary(VM* vm, Parser* parser, Scanner* scanner) {
   TokenType operatorType = parser->previous.type;
   ParseRule* rule = getRule(operatorType);
@@ -314,6 +320,8 @@ static void declaration(VM* vm, Parser* parser, Scanner* scanner) {
 static void statement(VM* vm, Parser* parser, Scanner* scanner) {
   if (match(parser, scanner, TOKEN_PRINT)) {
     printStatement(vm, parser, scanner);
+  } else {
+    expressionStatement(vm, parser, scanner);
   }
 }
 

@@ -165,6 +165,10 @@ static InterpretResult run(VM* vm) {
       push(&vm->stackTop, NUMBER_VAL(-AS_NUMBER(pop(&vm->stackTop))));
       break;
     }
+    case OP_POP: {
+      pop(&vm->stackTop);
+      break;
+    }
     case OP_PRINT: {
       printValue(pop(&vm->stackTop));
       printf("\n");
