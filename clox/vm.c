@@ -75,17 +75,15 @@ static void concatenate(VM* vm) {
 static InterpretResult run(VM* vm) {
 #define READ_BYTE() (*vm->ip++)
 #define READ_CONSTANT() (vm->chunk->constants.values[READ_BYTE()])
-#define POP() pop(&vm->stackTop)
-#define PUSH(value) push(&vm->stackTop, value)
 #define BINARY_OP(valueType, op)                                               \
   do {                                                                         \
     if (!IS_NUMBER(peek(vm, 0)) || !IS_NUMBER(peek(vm, 1))) {                  \
       runtimeError(vm, "Operands must be numbers.");                           \
       return INTERPRET_RUNTIME_ERROR;                                          \
     }                                                                          \
-    double b = AS_NUMBER(POP());                                               \
-    double a = AS_NUMBER(POP());                                               \
-    PUSH(valueType(a op b));                                                   \
+    double b = AS_NUMBER(pop(&vm->stackTop));                                  \
+    double a = AS_NUMBER(pop(&vm->stackTop));                                  \
+    push(&vm->stackTop, valueType(a op b));                                    \
   } while (false)
 
   for (;;) {
@@ -105,21 +103,21 @@ static InterpretResult run(VM* vm) {
       break;
     }
     case OP_NIL: {
-      PUSH(NIL_VAL);
+      push(&vm->stackTop, NIL_VAL);
       break;
     }
     case OP_TRUE: {
-      PUSH(BOOL_VAL(true));
+      push(&vm->stackTop, BOOL_VAL(true));
       break;
     }
     case OP_FALSE: {
-      PUSH(BOOL_VAL(false));
+      push(&vm->stackTop, BOOL_VAL(false));
       break;
     }
     case OP_EQUAL: {
-      Value a = POP();
-      Value b = POP();
-      PUSH(BOOL_VAL(valuesEqual(a, b)));
+      Value a = pop(&vm->stackTop);
+      Value b = pop(&vm->stackTop);
+      push(&vm->stackTop, BOOL_VAL(valuesEqual(a, b)));
       break;
     }
     case OP_GREATER: {
@@ -134,9 +132,9 @@ static InterpretResult run(VM* vm) {
       if (IS_STRING(peek(vm, 0)) && IS_STRING(peek(vm, 1))) {
         concatenate(vm);
       } else if (IS_NUMBER(peek(vm, 0)) && IS_NUMBER(peek(vm, 1))) {
-        double b = AS_NUMBER(POP());
-        double a = AS_NUMBER(POP());
-        PUSH(NUMBER_VAL(a + b));
+        double b = AS_NUMBER(pop(&vm->stackTop));
+        double a = AS_NUMBER(pop(&vm->stackTop));
+        push(&vm->stackTop, NUMBER_VAL(a + b));
       } else {
         runtimeError(vm, "Operands must be two numbers or two strings.");
         return INTERPRET_RUNTIME_ERROR;
@@ -156,7 +154,7 @@ static InterpretResult run(VM* vm) {
       break;
     }
     case OP_NOT: {
-      PUSH(BOOL_VAL(isFalsey(POP())));
+      push(&vm->stackTop, BOOL_VAL(isFalsey(pop(&vm->stackTop))));
       break;
     }
     case OP_NEGATE: {
@@ -164,11 +162,11 @@ static InterpretResult run(VM* vm) {
         runtimeError(vm, "Operand must be number.");
         return INTERPRET_RUNTIME_ERROR;
       }
-      PUSH(NUMBER_VAL(-AS_NUMBER(POP())));
+      push(&vm->stackTop, NUMBER_VAL(-AS_NUMBER(pop(&vm->stackTop))));
       break;
     }
     case OP_PRINT: {
-      printValue(POP());
+      printValue(pop(&vm->stackTop));
       printf("\n");
       break;
     }
