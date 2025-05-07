@@ -16,6 +16,7 @@ typedef enum {
   OP_ADD,
   OP_SUBTRACT,
   OP_MULTIPLY,
+  OP_DEFINE_GLOBAL,
   OP_DIVIDE,
   OP_NOT,
   OP_NEGATE,

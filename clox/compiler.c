@@ -336,8 +336,42 @@ static void parsePrecedence(VM* vm, Parser* parser, Scanner* scanner,
   }
 }
 
+static uint8_t identifierConstant(VM* vm, Parser* parser, Token* identifier) {
+  return makeConstant(
+      parser, OBJ_VAL(copyString(vm, identifier->start, identifier->length)));
+}
+
+static uint8_t parseVariable(VM* vm, Parser* parser, Scanner* scanner,
+                             const char* errorMessage) {
+  consume(parser, scanner, TOKEN_IDENTIFIER, errorMessage);
+  return identifierConstant(vm, parser, &parser->previous);
+}
+
+static void defineGlobal(Parser* parser, uint8_t global) {
+  emitBytes(parser, OP_DEFINE_GLOBAL, global);
+}
+
+static void varDeclaration(VM* vm, Parser* parser, Scanner* scanner) {
+  uint8_t global = parseVariable(vm, parser, scanner, "Expect variable name.");
+
+  if (match(parser, scanner, TOKEN_EQUAL)) {
+    expression(vm, parser, scanner);
+  } else {
+    emitByte(parser, OP_NIL);
+  }
+
+  consume(parser, scanner, TOKEN_SEMICOLON,
+          "Expect ';' after variable declaration.");
+
+  defineGlobal(parser, global);
+}
+
 static void declaration(VM* vm, Parser* parser, Scanner* scanner) {
-  statement(vm, parser, scanner);
+  if (match(parser, scanner, TOKEN_VAR)) {
+    varDeclaration(vm, parser, scanner);
+  } else {
+    statement(vm, parser, scanner);
+  }
 
   if (parser->panicMode)
     synchronize(parser, scanner);
